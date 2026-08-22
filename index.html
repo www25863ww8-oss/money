@@ -1212,7 +1212,7 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
       { label: "總腳本數", value: stats.scriptCount, tone: "" },
       { label: "腳本外包數", value: stats.outsourcedScriptQty, tone: stats.outsourcedScriptQty > 0 ? "warn" : "" },
       { label: "總影片數", value: stats.videoCount, tone: "" },
-      { label: "影片外包數", value: stats.outsourcedVideoQty, tone: stats.outsourcedVideoQty > 0 ? "warn" : "" }
+      { label: "剪輯外包數", value: stats.outsourcedEditQty, tone: stats.outsourcedEditQty > 0 ? "warn" : "" }
     ];
     var grid = section.querySelector(".production-grid");
     grid.innerHTML = cards.map(function (c) {
@@ -1624,7 +1624,7 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
     lines.push("總腳本數," + stats.scriptCount);
     lines.push("腳本外包數," + stats.outsourcedScriptQty);
     lines.push("總影片數," + stats.videoCount);
-    lines.push("影片外包數," + stats.outsourcedVideoQty);
+    lines.push("剪輯外包數," + stats.outsourcedEditQty);
     return "﻿" + lines.join("\r\n");
   }
 
