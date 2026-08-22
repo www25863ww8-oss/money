@@ -302,6 +302,7 @@
     color: var(--ink);
     font-family: "Noto Sans TC", sans-serif;
   }
+  td select.f-clientref { min-width: 130px; }
   td select:focus { border-color: var(--accent); outline: none; }
 
   tfoot td {
@@ -779,7 +780,7 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
 
   var ITEM_ROW_HTML =
     '<tr>' +
-    '<td><input type="text" class="f-clientref" placeholder="負責客戶"></td>' +
+    '<td><select class="f-clientref"><option value="">請選擇客戶</option></select></td>' +
     '<td><input type="text" class="f-content" placeholder="內容"></td>' +
     '<td><select class="f-type">' +
       '<option value="script">腳本</option>' +
@@ -980,7 +981,41 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
   function addItemRow(card) {
     var tbody = card.querySelector(".contractor-items-body");
     tbody.insertAdjacentHTML("beforeend", ITEM_ROW_HTML);
-    return tbody.lastElementChild;
+    var tr = tbody.lastElementChild;
+    var section = card.closest(".month-section");
+    if (section) populateClientRefSelect(tr.querySelector(".f-clientref"), section, "");
+    return tr;
+  }
+
+  // 負責客戶 dropdown: options are pulled from this month's 客戶總覽 client
+  // names. A value that no longer matches any current client (e.g. copied
+  // from last month, or the client was renamed/deleted) is kept as an extra
+  // option so existing data is never silently lost or changed.
+  function getClientNames(section) {
+    var seen = {};
+    var names = [];
+    section.querySelectorAll(".clients-body tr .f-name").forEach(function (input) {
+      var v = input.value.trim();
+      if (v && !seen[v]) { seen[v] = true; names.push(v); }
+    });
+    return names;
+  }
+  function populateClientRefSelect(select, section, currentValue) {
+    var names = getClientNames(section);
+    var html = '<option value="">請選擇客戶</option>';
+    names.forEach(function (n) {
+      html += '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>';
+    });
+    if (currentValue && names.indexOf(currentValue) === -1) {
+      html += '<option value="' + escapeHtml(currentValue) + '">' + escapeHtml(currentValue) + '（非本月客戶）</option>';
+    }
+    select.innerHTML = html;
+    select.value = currentValue || "";
+  }
+  function refreshClientRefSelects(section) {
+    section.querySelectorAll(".f-clientref").forEach(function (sel) {
+      populateClientRefSelect(sel, section, sel.value);
+    });
   }
   function addExpenseRow(section) {
     var tbody = section.querySelector(".expense-body");
@@ -1007,7 +1042,8 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
     // payment status & paid amount intentionally reset for the new month
   }
   function fillItemRow(tr, it) {
-    tr.querySelector(".f-clientref").value = it.clientRef || "";
+    var section = tr.closest(".month-section");
+    if (section) populateClientRefSelect(tr.querySelector(".f-clientref"), section, it.clientRef || "");
     tr.querySelector(".f-content").value = it.content || "";
     tr.querySelector(".f-type").value = it.type || "other";
     tr.querySelector(".f-unitprice").value = it.unitPrice || "";
@@ -1209,6 +1245,7 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
   function recomputeSection(key) {
     var section = getMonthSection(key);
     if (!section) return;
+    refreshClientRefSelects(section);
     renderClientsFoot(section);
     renderContractorTotals(section);
     renderOutsourceSummary(section);
