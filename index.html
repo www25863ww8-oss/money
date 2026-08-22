@@ -1,0 +1,1682 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%AC%3C/text%3E%3C/svg%3E">
+<title>片場帳本</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root {
+    --ink: #1b1e23;
+    --ink-dim: #5b6169;
+    --paper: #f0f2ed;
+    --surface: #ffffff;
+    --surface-2: #f7f8f5;
+    --line: #dee2da;
+    --accent: #0f8b8d;
+    --accent-ink: #ffffff;
+    --accent-dim: #e3f3f2;
+    --success: #1f9d63;
+    --success-dim: #e4f5ec;
+    --warn: #c97a0a;
+    --warn-dim: #fbf0dc;
+    --danger: #d64545;
+    --danger-dim: #fbe7e7;
+    --shadow: 0 1px 2px rgba(27,30,35,0.06), 0 4px 14px rgba(27,30,35,0.05);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #ecece9;
+      --ink-dim: #a7ada3;
+      --paper: #14171a;
+      --surface: #1b1f23;
+      --surface-2: #21262b;
+      --line: #2e343a;
+      --accent: #2dd4cf;
+      --accent-ink: #06201f;
+      --accent-dim: #163534;
+      --success: #34c27f;
+      --success-dim: #12271f;
+      --warn: #e0a23b;
+      --warn-dim: #2e230f;
+      --danger: #e96666;
+      --danger-dim: #2e1717;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 6px 18px rgba(0,0,0,0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #ecece9;
+    --ink-dim: #a7ada3;
+    --paper: #14171a;
+    --surface: #1b1f23;
+    --surface-2: #21262b;
+    --line: #2e343a;
+    --accent: #2dd4cf;
+    --accent-ink: #06201f;
+    --accent-dim: #163534;
+    --success: #34c27f;
+    --success-dim: #12271f;
+    --warn: #e0a23b;
+    --warn-dim: #2e230f;
+    --danger: #e96666;
+    --danger-dim: #2e1717;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 6px 18px rgba(0,0,0,0.35);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .mono {
+    font-family: "IBM Plex Mono", "Noto Sans TC", monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  a { color: var(--accent); }
+
+  button { font-family: inherit; }
+  input, select, button { font-size: 14px; }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ---------- topbar ---------- */
+
+  .topbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 16px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .brand .mark {
+    font-weight: 900;
+    font-size: 19px;
+    letter-spacing: 0.02em;
+  }
+  .brand .tagline {
+    font-size: 12px;
+    color: var(--ink-dim);
+    letter-spacing: 0.04em;
+  }
+
+  .month-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 4px;
+  }
+  .month-nav .icon-btn {
+    border: none;
+    background: transparent;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    font-size: 16px;
+    cursor: pointer;
+    color: var(--ink-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .month-nav .icon-btn:hover { background: var(--line); color: var(--ink); }
+  .month-nav input[type="month"] {
+    border: none;
+    background: transparent;
+    font-family: "IBM Plex Mono", monospace;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink);
+    padding: 4px 6px;
+  }
+
+  /* ---------- tabs ---------- */
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    padding: 12px 24px 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    overflow-x: auto;
+  }
+  .tab-btn {
+    border: none;
+    background: transparent;
+    padding: 10px 18px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink-dim);
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 700; }
+  .tab-btn:hover:not(.active) { color: var(--ink); }
+
+  /* ---------- layout ---------- */
+
+  main, #dataPanel, #emptyState {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 22px 24px 60px;
+  }
+
+  .tab-content { display: none; }
+  body[data-local-tab="clients"] .tab-content[data-tabname="clients"] { display: block; }
+  body[data-local-tab="outsource"] .tab-content[data-tabname="outsource"] { display: block; }
+  body[data-local-tab="dashboard"] .tab-content[data-tabname="dashboard"] { display: block; }
+
+  #monthsRoot { display: block; }
+  body[data-local-tab="data"] #monthsRoot { display: none; }
+
+  #dataPanel { display: none; }
+  body[data-local-tab="data"] #dataPanel { display: block; }
+
+  .month-section[data-local-hidden="true"] { display: none; }
+
+  #emptyState[data-local-hidden="true"] { display: none; }
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 30px 0 12px;
+    letter-spacing: 0.01em;
+  }
+
+  .panel-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    padding: 9px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13.5px;
+    font-weight: 500;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 700;
+  }
+  .btn-primary:hover { opacity: 0.92; }
+  .btn-ghost {
+    background: var(--accent-dim);
+    border-color: transparent;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .btn[hidden] { display: none; }
+
+  /* ---------- tables ---------- */
+
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .table-wrap { overflow-x: auto; }
+
+  table { border-collapse: collapse; width: 100%; min-width: 820px; }
+
+  th, td {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    white-space: nowrap;
+  }
+  th {
+    background: var(--surface-2);
+    color: var(--ink-dim);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.03em;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--surface-2); }
+
+  .col-name { min-width: 130px; }
+  .col-note { min-width: 150px; }
+
+  td input {
+    width: 100%;
+    min-width: 76px;
+    padding: 6px 7px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--ink);
+    font-family: "Noto Sans TC", sans-serif;
+  }
+  td input[type="number"] { min-width: 92px; font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; }
+  td input.f-name { min-width: 108px; font-weight: 600; font-family: "Noto Sans TC", sans-serif; }
+  td input:hover { border-color: var(--line); }
+  td input:focus { border-color: var(--accent); background: var(--surface); outline: none; }
+
+  td select {
+    width: 100%;
+    min-width: 78px;
+    padding: 6px 7px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--ink);
+    font-family: "Noto Sans TC", sans-serif;
+  }
+  td select:focus { border-color: var(--accent); outline: none; }
+
+  tfoot td {
+    font-weight: 700;
+    background: var(--surface-2);
+    border-top: 2px solid var(--line);
+    font-family: "IBM Plex Mono", monospace;
+  }
+
+  .del-btn {
+    border: none;
+    background: transparent;
+    color: var(--ink-dim);
+    cursor: pointer;
+    font-size: 15px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+  .del-btn:hover { background: var(--danger-dim); color: var(--danger); }
+  .del-btn.armed {
+    background: var(--danger);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 10px;
+  }
+  .del-btn.armed:hover { background: var(--danger); color: #fff; }
+
+  .status-toggle {
+    display: inline-flex;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .status-btn {
+    border: none;
+    background: transparent;
+    padding: 5px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--ink-dim);
+  }
+  .status-btn + .status-btn { border-left: 1px solid var(--line); }
+  .status-toggle[data-status="unpaid"] .status-btn[data-value="unpaid"] { background: var(--danger); color: #fff; }
+  .status-toggle[data-status="partial"] .status-btn[data-value="partial"] { background: var(--warn); color: #fff; }
+  .status-toggle[data-status="paid"] .status-btn[data-value="paid"] { background: var(--success); color: #fff; }
+
+  /* ---------- dashboard ---------- */
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+  .stat-card {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px 14px 18px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .stat-card::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: var(--ink-dim);
+  }
+  .stat-card.tone-accent::before { background: var(--accent); }
+  .stat-card.tone-success::before { background: var(--success); }
+  .stat-card.tone-danger::before { background: var(--danger); }
+  .stat-card.tone-warn::before { background: var(--warn); }
+  .stat-card .label {
+    font-size: 11.5px;
+    color: var(--ink-dim);
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+  }
+  .stat-card .value {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 21px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-card.tone-success .value { color: var(--success); }
+  .stat-card.tone-danger .value { color: var(--danger); }
+  .stat-card.tone-warn .value { color: var(--warn); }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 18px;
+    overflow-x: auto;
+  }
+
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  /* ---------- outsource contractor cards ---------- */
+
+  .contractors-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+  .contractor-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 16px 18px;
+  }
+  .contractor-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .contractor-head .f-cname {
+    font-weight: 700;
+    font-size: 15px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 7px 9px;
+    background: transparent;
+    color: var(--ink);
+    flex: 1 1 160px;
+    min-width: 140px;
+    font-family: "Noto Sans TC", sans-serif;
+  }
+  .contractor-head .f-cname:hover { border-color: var(--line); }
+  .contractor-head .f-cname:focus { border-color: var(--accent); background: var(--surface-2); outline: none; }
+  .contractor-head .f-paid {
+    width: 120px;
+    padding: 7px 9px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--ink);
+    font-family: "IBM Plex Mono", monospace;
+    font-variant-numeric: tabular-nums;
+  }
+  .contractor-head .f-paid:focus { border-color: var(--accent); outline: none; }
+  .contractor-totals {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: var(--ink-dim);
+    margin-left: auto;
+  }
+  .contractor-totals .ct-amount { font-weight: 700; color: var(--accent); }
+  .contractor-items {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 620px;
+  }
+  .contractor-items th {
+    background: var(--surface-2);
+    color: var(--ink-dim);
+    font-weight: 600;
+    font-size: 12px;
+  }
+  .contractor-items td, .contractor-items th { padding: 7px 8px; }
+  .contractor-items tbody tr:last-child td { border-bottom: none; }
+  .item-subtotal {
+    font-family: "IBM Plex Mono", monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+  .add-item-btn { margin-top: 10px; font-size: 12.5px; padding: 6px 12px; }
+  .contractor-empty-hint {
+    color: var(--ink-dim);
+    font-size: 13px;
+    padding: 4px 2px 8px;
+  }
+
+  /* ---------- empty state ---------- */
+
+  #emptyState .empty-card {
+    background: var(--surface);
+    border: 1px dashed var(--line);
+    border-radius: 14px;
+    padding: 48px 32px;
+    text-align: center;
+  }
+  #emptyState .empty-card .icon { font-size: 34px; margin-bottom: 10px; }
+  #emptyState .empty-card h2 { margin: 0 0 8px; font-size: 17px; }
+  #emptyState .empty-card p { margin: 0 0 20px; color: var(--ink-dim); font-size: 13.5px; }
+  #emptyState .empty-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+  /* ---------- data panel ---------- */
+
+  .data-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 20px 22px;
+    margin-bottom: 16px;
+  }
+  .data-card h2 { margin: 0 0 8px; font-size: 15.5px; }
+  .data-card p.hint { margin: 0 0 14px; color: var(--ink-dim); font-size: 13px; line-height: 1.7; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .data-status { font-size: 13px; color: var(--ink-dim); margin: 10px 0 0; }
+  .data-status.is-error { color: var(--danger); }
+  .data-status:empty { display: none; }
+  .file-btn { display: inline-block; }
+  .backup-textarea {
+    display: block;
+    width: 100%;
+    height: 160px;
+    margin-top: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-2);
+    color: var(--ink);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    resize: vertical;
+  }
+  .backup-textarea[hidden] { display: none; }
+  .sync-note {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--success);
+    background: var(--success-dim);
+    padding: 4px 10px;
+    border-radius: 999px;
+  }
+
+  .sync-badge {
+    font-size: 12px;
+    color: var(--ink-dim);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+  .sync-badge .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--ink-dim);
+    flex: none;
+  }
+  .sync-badge[data-state="saving"] .dot { background: var(--warn); }
+  .sync-badge[data-state="saved"] { color: var(--success); }
+  .sync-badge[data-state="saved"] .dot { background: var(--success); }
+  .sync-badge[data-state="error"] { color: var(--danger); }
+  .sync-badge[data-state="error"] .dot { background: var(--danger); }
+  .sync-badge[data-state="update-available"] {
+    color: var(--accent);
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .sync-badge[data-state="update-available"] .dot { background: var(--accent); }
+
+  @media (max-width: 640px) {
+    .topbar { padding: 12px 16px; }
+    .tabs { padding: 10px 16px 0; }
+    main, #dataPanel, #emptyState { padding: 16px 16px 50px; }
+    .brand .tagline { display: none; }
+  }
+</style>
+
+</head>
+<body data-local-tab="clients">
+
+<header class="topbar" artifact-local>
+  <div class="brand">
+    <span class="mark">🎬 片場帳本</span>
+    <span class="tagline">短影音接案 · 每月營運紀錄</span>
+  </div>
+  <div class="month-nav">
+    <button type="button" class="icon-btn" id="prevMonthBtn" title="上個月" aria-label="上個月">‹</button>
+    <input type="month" id="monthPicker" aria-label="選擇月份">
+    <button type="button" class="icon-btn" id="nextMonthBtn" title="下個月" aria-label="下個月">›</button>
+  </div>
+  <span class="sync-badge" id="syncBadge" data-state="idle"><span class="dot"></span><span class="sync-label">載入中…</span></span>
+</header>
+
+<nav class="tabs" artifact-local>
+  <button type="button" class="tab-btn" data-tab="clients">客戶總覽</button>
+  <button type="button" class="tab-btn" data-tab="outsource">外包管理</button>
+  <button type="button" class="tab-btn" data-tab="dashboard">月度總覽</button>
+  <button type="button" class="tab-btn" data-tab="data">資料管理</button>
+</nav>
+
+<div id="emptyState" artifact-local data-local-hidden="true">
+  <div class="empty-card">
+    <div class="icon">🗂️</div>
+    <h2 id="emptyStateMonthLabel">這個月還沒有資料</h2>
+    <p>建立一個新的月份，或是從上個月複製客戶與外包名單再微調。</p>
+    <div class="empty-actions">
+      <button type="button" class="btn btn-ghost" id="emptyCopyBtn">複製上個月資料</button>
+      <button type="button" class="btn btn-primary" id="emptyCreateBtn">＋建立本月資料</button>
+    </div>
+  </div>
+</div>
+
+<main id="monthsRoot"></main>
+
+<section id="dataPanel" artifact-local>
+  <div class="data-card">
+    <h2>即時同步</h2>
+    <p class="hint">
+      每次修改都會立即存到這台裝置，並自動同步到雲端資料庫。任何一台已打開這個網址的裝置，只要不是正在同一個欄位打字，改動會自動推送過去、畫面自動更新；如果剛好在編輯中，右上角燈號會顯示「有其他裝置的新資料，點此更新」，點一下就套用，不會蓋掉你正在打的內容。<br>
+      如果燈號顯示「已存在本機，跨裝置同步不可用」，代表雲端連線暫時失敗（可能沒有網路），資料仍安全存在這台裝置，恢復連線後會自動補上。
+    </p>
+    <span class="sync-note">● 資料庫：Firebase Realtime Database</span>
+  </div>
+
+  <div class="data-card">
+    <h2>備份匯出</h2>
+    <p class="hint">想額外留一份存檔（例如給會計師、或搬到別的系統），可以匯出以下檔案：</p>
+    <div class="btn-row">
+      <button type="button" class="btn btn-primary" id="exportJsonBtn">匯出全部資料 (JSON)</button>
+      <button type="button" class="btn" id="exportCsvBtn">匯出本月報表 (CSV)</button>
+      <button type="button" class="btn btn-ghost" id="showBackupTextBtn">顯示備份文字（複製用）</button>
+    </div>
+    <p class="data-status" id="dataStatusMsg"></p>
+    <textarea id="backupTextArea" class="backup-textarea" hidden readonly aria-label="備份資料文字"></textarea>
+  </div>
+
+  <div class="data-card">
+    <h2>還原 / 搬到別台裝置</h2>
+    <p class="hint">如果畫面顯示「跨裝置同步不可用」，換到別台裝置時：先在原本的裝置匯出 JSON 備份，再到新裝置打開這個連結，用下面按鈕匯入。匯入會覆蓋這台裝置目前看到的資料。</p>
+    <div class="btn-row">
+      <label class="btn file-btn">
+        匯入資料 (JSON)
+        <input type="file" id="importJsonInput" accept="application/json" hidden>
+      </label>
+    </div>
+  </div>
+</section>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+
+(function () {
+  "use strict";
+
+  var firebaseConfig = {
+    apiKey: "AIzaSyAWxk2zsN99zjl1uyv6FFkrfFUygVjMhf8",
+    authDomain: "money-d0db3.firebaseapp.com",
+    databaseURL: "https://money-d0db3-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "money-d0db3",
+    storageBucket: "money-d0db3.firebasestorage.app",
+    messagingSenderId: "319316309623",
+    appId: "1:319316309623:web:b951d9b21d48440048b872",
+    measurementId: "G-07GR6G9TYS"
+  };
+  var fbApp = initializeApp(firebaseConfig);
+  var db = getDatabase(fbApp);
+  var docRef = ref(db, "piancang/data");
+
+  var state = {
+    currentMonth: monthKey(new Date()),
+    currentTab: "clients"
+  };
+
+  try {
+    var savedTab = localStorage.getItem("piancang_last_tab");
+    if (savedTab) state.currentTab = savedTab;
+  } catch (e) {}
+
+  // ---------- month helpers ----------
+
+  function monthKey(d) {
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, "0");
+    return y + "-" + m;
+  }
+  function shiftMonth(key, delta) {
+    var parts = key.split("-").map(Number);
+    var d = new Date(parts[0], parts[1] - 1 + delta, 1);
+    return monthKey(d);
+  }
+  function monthLabel(key) {
+    var parts = key.split("-");
+    return parts[0] + "年" + parseInt(parts[1], 10) + "月";
+  }
+  function num(v) {
+    var n = parseFloat(v);
+    return isNaN(n) ? 0 : n;
+  }
+  function fmtMoney(n) {
+    n = Number(n) || 0;
+    return n.toLocaleString("zh-TW", { maximumFractionDigits: 0 });
+  }
+  function statusLabel(s) {
+    if (s === "paid") return "已收/已付";
+    if (s === "partial") return "部分";
+    return "未收/未付";
+  }
+  function typeLabel(t) {
+    var labels = { script: "腳本", edit: "剪輯", shoot: "拍攝", video: "影片", other: "其他" };
+    return labels[t] || "其他";
+  }
+  function escapeHtml(s) {
+    var d = document.createElement("div");
+    d.textContent = s == null ? "" : String(s);
+    return d.innerHTML;
+  }
+
+  // ---------- row templates ----------
+
+  var CLIENT_ROW_HTML =
+    '<tr>' +
+    '<td><input type="text" class="f-name" placeholder="客戶名稱"></td>' +
+    '<td><input type="number" class="f-amount" step="any" placeholder="0"></td>' +
+    '<td><input type="number" class="f-tax" step="any" placeholder="0"></td>' +
+    '<td><input type="number" class="f-script" step="any" placeholder="0"></td>' +
+    '<td><input type="number" class="f-edit" step="any" placeholder="0"></td>' +
+    '<td><input type="number" class="f-shootdays" step="any" placeholder="0"></td>' +
+    '<td><input type="number" class="f-video" step="any" placeholder="0"></td>' +
+    '<td><div class="status-toggle" data-status="unpaid">' +
+      '<button type="button" class="status-btn" data-value="unpaid">未收</button>' +
+      '<button type="button" class="status-btn" data-value="partial">部分</button>' +
+      '<button type="button" class="status-btn" data-value="paid">已收</button>' +
+    '</div></td>' +
+    '<td><input type="number" class="f-received" step="any" placeholder="0"></td>' +
+    '<td><input type="text" class="f-note" placeholder="備註"></td>' +
+    '<td><button type="button" class="del-btn client-del-btn" artifact-local title="刪除列">✕</button></td>' +
+    '</tr>';
+
+  var EXPENSE_ROW_HTML =
+    '<tr>' +
+    '<td><input type="text" class="f-name" placeholder="項目名稱"></td>' +
+    '<td><input type="number" class="f-amount" step="any" placeholder="0"></td>' +
+    '<td><input type="text" class="f-note" placeholder="備註"></td>' +
+    '<td><button type="button" class="del-btn expense-del-btn" artifact-local title="刪除列">✕</button></td>' +
+    '</tr>';
+
+  var CONTRACTOR_CARD_HTML =
+    '<div class="contractor-card">' +
+    '<div class="contractor-head">' +
+      '<input type="text" class="f-cname" placeholder="外包名稱（例如：小華剪輯）">' +
+      '<div class="status-toggle" data-status="unpaid">' +
+        '<button type="button" class="status-btn" data-value="unpaid">未付</button>' +
+        '<button type="button" class="status-btn" data-value="partial">部分</button>' +
+        '<button type="button" class="status-btn" data-value="paid">已付</button>' +
+      '</div>' +
+      '<input type="number" class="f-paid" step="any" placeholder="實付金額">' +
+      '<div class="contractor-totals mono" artifact-local>' +
+        '<span class="ct-qty">總數量 0</span>' +
+        '<span class="ct-amount">總金額 $0</span>' +
+      '</div>' +
+      '<button type="button" class="del-btn contractor-del-btn" artifact-local title="刪除整個外包">✕</button>' +
+    '</div>' +
+    '<div class="table-wrap"><table class="contractor-items"><thead><tr>' +
+      '<th class="col-name">負責客戶</th><th>內容</th><th>類型</th><th>單價</th><th>數量</th><th>小計</th><th></th>' +
+    '</tr></thead>' +
+    '<tbody class="contractor-items-body"></tbody>' +
+    '</table></div>' +
+    '<button type="button" class="btn btn-ghost add-item-btn">＋新增細項</button>' +
+    '</div>';
+
+  var ITEM_ROW_HTML =
+    '<tr>' +
+    '<td><input type="text" class="f-clientref" placeholder="負責客戶"></td>' +
+    '<td><input type="text" class="f-content" placeholder="內容"></td>' +
+    '<td><select class="f-type">' +
+      '<option value="script">腳本</option>' +
+      '<option value="edit">剪輯</option>' +
+      '<option value="shoot">拍攝</option>' +
+      '<option value="video">影片</option>' +
+      '<option value="other" selected>其他</option>' +
+    '</select></td>' +
+    '<td><input type="number" class="f-unitprice" step="any" placeholder="0"></td>' +
+    '<td><input type="number" class="f-quantity" step="any" placeholder="0"></td>' +
+    '<td class="item-subtotal mono" artifact-local>0</td>' +
+    '<td><button type="button" class="del-btn item-del-btn" artifact-local title="刪除細項">✕</button></td>' +
+    '</tr>';
+
+  function monthSectionInnerHTML(key) {
+    return '' +
+    '<div class="tab-content" data-tabname="clients">' +
+      '<div class="panel-actions">' +
+        '<button type="button" class="btn btn-ghost copy-last-clients-btn" hidden>複製上個月客戶資料</button>' +
+        '<button type="button" class="btn btn-primary add-client-btn">＋新增客戶</button>' +
+      '</div>' +
+      '<div class="table-card"><div class="table-wrap">' +
+      '<table><thead><tr>' +
+        '<th class="col-name">客戶名稱</th><th>金額</th><th>稅金</th><th>腳本數量</th><th>剪輯數量</th>' +
+        '<th>拍攝天數</th><th>影片數量</th><th>收款狀態</th><th>實收金額</th><th class="col-note">備註</th><th></th>' +
+      '</tr></thead>' +
+      '<tbody class="clients-body"></tbody>' +
+      '<tfoot class="clients-foot" artifact-local></tfoot>' +
+      '</table></div></div>' +
+    '</div>' +
+
+    '<div class="tab-content" data-tabname="outsource">' +
+      '<div class="panel-actions">' +
+        '<button type="button" class="btn btn-ghost copy-last-outsource-btn" hidden>複製上個月外包資料</button>' +
+        '<button type="button" class="btn btn-primary add-contractor-btn">＋新增外包</button>' +
+      '</div>' +
+      '<div class="contractors-wrap"></div>' +
+
+      '<h2 class="section-title">本月外包彙總</h2>' +
+      '<div class="summary-card"><div class="table-wrap">' +
+      '<table><thead><tr><th>外包名稱</th><th>總數量</th><th>總金額</th><th>已付金額</th><th>未付金額</th></tr></thead>' +
+      '<tbody class="outsource-summary" artifact-local></tbody>' +
+      '</table></div></div>' +
+    '</div>' +
+
+    '<div class="tab-content" data-tabname="dashboard">' +
+      '<div class="stat-grid" artifact-local></div>' +
+
+      '<h2 class="section-title">本月產量</h2>' +
+      '<div class="stat-grid production-grid" artifact-local></div>' +
+
+      '<h2 class="section-title">其他支出</h2>' +
+      '<div class="panel-actions">' +
+        '<button type="button" class="btn btn-primary add-expense-btn">＋新增支出項目</button>' +
+      '</div>' +
+      '<div class="table-card"><div class="table-wrap">' +
+      '<table><thead><tr><th class="col-name">項目名稱</th><th>金額</th><th class="col-note">備註</th><th></th></tr></thead>' +
+      '<tbody class="expense-body"></tbody>' +
+      '<tfoot class="expense-foot" artifact-local></tfoot>' +
+      '</table></div></div>' +
+
+      '<h2 class="section-title">近12個月趨勢</h2>' +
+      '<div class="chart-card trend-chart" artifact-local></div>' +
+    '</div>';
+  }
+
+  function ensureMonthSection(key) {
+    var existing = document.querySelector('.month-section[data-month="' + key + '"]');
+    if (existing) return existing;
+    var section = document.createElement("section");
+    section.className = "month-section";
+    section.dataset.month = key;
+    section.dataset.localHidden = "true";
+    section.innerHTML = monthSectionInnerHTML(key);
+    document.getElementById("monthsRoot").appendChild(section);
+    return section;
+  }
+
+  function getMonthSection(key) {
+    return document.querySelector('.month-section[data-month="' + key + '"]');
+  }
+
+  // ---------- reading data out of the DOM ----------
+
+  function readClients(section) {
+    if (!section) return [];
+    var rows = section.querySelectorAll(".clients-body tr");
+    return Array.prototype.map.call(rows, function (tr) {
+      return {
+        name: tr.querySelector(".f-name").value,
+        amount: num(tr.querySelector(".f-amount").value),
+        tax: num(tr.querySelector(".f-tax").value),
+        scriptCount: num(tr.querySelector(".f-script").value),
+        editCount: num(tr.querySelector(".f-edit").value),
+        shootDays: num(tr.querySelector(".f-shootdays").value),
+        videoCount: num(tr.querySelector(".f-video").value),
+        paymentStatus: tr.querySelector(".status-toggle").dataset.status,
+        receivedAmount: num(tr.querySelector(".f-received").value),
+        note: tr.querySelector(".f-note").value
+      };
+    });
+  }
+
+  function readOutsourcers(section) {
+    if (!section) return [];
+    var cards = section.querySelectorAll(".contractor-card");
+    return Array.prototype.map.call(cards, function (card) {
+      var items = Array.prototype.map.call(card.querySelectorAll(".contractor-items-body tr"), function (tr) {
+        var unitPrice = num(tr.querySelector(".f-unitprice").value);
+        var quantity = num(tr.querySelector(".f-quantity").value);
+        return {
+          clientRef: tr.querySelector(".f-clientref").value,
+          content: tr.querySelector(".f-content").value,
+          type: tr.querySelector(".f-type").value,
+          unitPrice: unitPrice,
+          quantity: quantity,
+          subtotal: unitPrice * quantity
+        };
+      });
+      var total = items.reduce(function (s, it) { return s + it.subtotal; }, 0);
+      var totalQty = items.reduce(function (s, it) { return s + it.quantity; }, 0);
+      return {
+        name: card.querySelector(".f-cname").value,
+        paymentStatus: card.querySelector(".status-toggle").dataset.status,
+        paidAmount: num(card.querySelector(".f-paid").value),
+        items: items,
+        total: total,
+        totalQty: totalQty
+      };
+    });
+  }
+
+  function readExpenses(section) {
+    if (!section) return [];
+    var rows = section.querySelectorAll(".expense-body tr");
+    return Array.prototype.map.call(rows, function (tr) {
+      return {
+        name: tr.querySelector(".f-name").value,
+        amount: num(tr.querySelector(".f-amount").value),
+        note: tr.querySelector(".f-note").value
+      };
+    });
+  }
+
+  function computeStats(key) {
+    var section = getMonthSection(key);
+    var clients = readClients(section);
+    var outsourcers = readOutsourcers(section);
+    var expenses = readExpenses(section);
+    var revenue = clients.reduce(function (s, c) { return s + c.amount; }, 0);
+    var tax = clients.reduce(function (s, c) { return s + c.tax; }, 0);
+    var received = clients.reduce(function (s, c) { return s + c.receivedAmount; }, 0);
+    var unreceived = Math.max(0, revenue - received);
+    var outsourceCost = outsourcers.reduce(function (s, o) { return s + o.total; }, 0);
+    var outsourcePaid = outsourcers.reduce(function (s, o) { return s + o.paidAmount; }, 0);
+    var unpaid = Math.max(0, outsourceCost - outsourcePaid);
+    var otherExpense = expenses.reduce(function (s, e) { return s + e.amount; }, 0);
+    var netProfit = revenue - tax - outsourceCost - otherExpense;
+
+    var shootDays = clients.reduce(function (s, c) { return s + c.shootDays; }, 0);
+    var scriptCount = clients.reduce(function (s, c) { return s + c.scriptCount; }, 0);
+    var editCount = clients.reduce(function (s, c) { return s + c.editCount; }, 0);
+    var videoCount = clients.reduce(function (s, c) { return s + c.videoCount; }, 0);
+
+    var allItems = [];
+    outsourcers.forEach(function (o) { allItems = allItems.concat(o.items); });
+    function outsourcedQtyByType(type) {
+      return allItems.reduce(function (s, it) { return it.type === type ? s + it.quantity : s; }, 0);
+    }
+    var outsourcedScriptQty = outsourcedQtyByType("script");
+    var outsourcedEditQty = outsourcedQtyByType("edit");
+    var outsourcedShootQty = outsourcedQtyByType("shoot");
+    var outsourcedVideoQty = outsourcedQtyByType("video");
+
+    return {
+      revenue: revenue, tax: tax, received: received, unreceived: unreceived,
+      outsourceCost: outsourceCost, outsourcePaid: outsourcePaid, unpaid: unpaid,
+      otherExpense: otherExpense, netProfit: netProfit,
+      clientCount: clients.length, outsourceCount: outsourcers.length,
+      shootDays: shootDays, scriptCount: scriptCount, editCount: editCount, videoCount: videoCount,
+      outsourcedScriptQty: outsourcedScriptQty, outsourcedEditQty: outsourcedEditQty,
+      outsourcedShootQty: outsourcedShootQty, outsourcedVideoQty: outsourcedVideoQty
+    };
+  }
+
+  // ---------- adding / removing rows ----------
+
+  function addClientRow(section) {
+    var tbody = section.querySelector(".clients-body");
+    tbody.insertAdjacentHTML("beforeend", CLIENT_ROW_HTML);
+    return tbody.lastElementChild;
+  }
+  function addContractorCard(section) {
+    var wrap = section.querySelector(".contractors-wrap");
+    wrap.insertAdjacentHTML("beforeend", CONTRACTOR_CARD_HTML);
+    return wrap.lastElementChild;
+  }
+  function addItemRow(card) {
+    var tbody = card.querySelector(".contractor-items-body");
+    tbody.insertAdjacentHTML("beforeend", ITEM_ROW_HTML);
+    return tbody.lastElementChild;
+  }
+  function addExpenseRow(section) {
+    var tbody = section.querySelector(".expense-body");
+    tbody.insertAdjacentHTML("beforeend", EXPENSE_ROW_HTML);
+    return tbody.lastElementChild;
+  }
+
+  function fillClientRow(tr, c) {
+    tr.querySelector(".f-name").value = c.name || "";
+    tr.querySelector(".f-amount").value = c.amount || "";
+    tr.querySelector(".f-tax").value = c.tax || "";
+    tr.querySelector(".f-script").value = c.scriptCount || "";
+    tr.querySelector(".f-edit").value = c.editCount || "";
+    tr.querySelector(".f-shootdays").value = c.shootDays || "";
+    tr.querySelector(".f-video").value = c.videoCount || "";
+    tr.querySelector(".f-note").value = c.note || "";
+    // payment status & received amount intentionally reset for the new month
+  }
+  function fillContractorCard(card, o) {
+    card.querySelector(".f-cname").value = o.name || "";
+    o.items.forEach(function (it) {
+      fillItemRow(addItemRow(card), it);
+    });
+    // payment status & paid amount intentionally reset for the new month
+  }
+  function fillItemRow(tr, it) {
+    tr.querySelector(".f-clientref").value = it.clientRef || "";
+    tr.querySelector(".f-content").value = it.content || "";
+    tr.querySelector(".f-type").value = it.type || "other";
+    tr.querySelector(".f-unitprice").value = it.unitPrice || "";
+    tr.querySelector(".f-quantity").value = it.quantity || "";
+  }
+
+  // exact restore (used when loading previously saved data — unlike
+  // fillClientRow/fillContractorCard used for "copy last month", this keeps
+  // payment status and paid/received amounts as saved)
+  function fillClientRowExact(tr, c) {
+    fillClientRow(tr, c);
+    tr.querySelector(".status-toggle").dataset.status = c.paymentStatus || "unpaid";
+    tr.querySelector(".f-received").value = c.receivedAmount || "";
+  }
+  function fillContractorCardExact(card, o) {
+    card.querySelector(".f-cname").value = o.name || "";
+    card.querySelector(".status-toggle").dataset.status = o.paymentStatus || "unpaid";
+    card.querySelector(".f-paid").value = o.paidAmount || "";
+    (o.items || []).forEach(function (it) {
+      fillItemRow(addItemRow(card), it);
+    });
+  }
+
+  function buildAllMonthsFromData(data) {
+    if (!data || !data.months) return;
+    Object.keys(data.months).forEach(function (key) {
+      var m = data.months[key];
+      var section = ensureMonthSection(key);
+      (m.clients || []).forEach(function (c) { fillClientRowExact(addClientRow(section), c); });
+      (m.outsourcers || []).forEach(function (o) { fillContractorCardExact(addContractorCard(section), o); });
+      (m.otherExpenses || []).forEach(function (e) {
+        var tr = addExpenseRow(section);
+        tr.querySelector(".f-name").value = e.name || "";
+        tr.querySelector(".f-amount").value = e.amount || "";
+        tr.querySelector(".f-note").value = e.note || "";
+      });
+    });
+  }
+
+  // ---------- copy last month ----------
+
+  function copyLastClients(targetKey) {
+    var prevSection = getMonthSection(shiftMonth(targetKey, -1));
+    var prevClients = readClients(prevSection);
+    if (prevClients.length === 0) return false;
+    var section = ensureMonthSection(targetKey);
+    prevClients.forEach(function (c) {
+      fillClientRow(addClientRow(section), c);
+    });
+    return true;
+  }
+  function copyLastOutsourcers(targetKey) {
+    var prevSection = getMonthSection(shiftMonth(targetKey, -1));
+    var prevOutsourcers = readOutsourcers(prevSection);
+    if (prevOutsourcers.length === 0) return false;
+    var section = ensureMonthSection(targetKey);
+    prevOutsourcers.forEach(function (o) {
+      fillContractorCard(addContractorCard(section), o);
+    });
+    return true;
+  }
+
+  // ---------- computed / local render ----------
+
+  function renderClientsFoot(section) {
+    var clients = readClients(section);
+    var totalAmount = clients.reduce(function (s, c) { return s + c.amount; }, 0);
+    var totalTax = clients.reduce(function (s, c) { return s + c.tax; }, 0);
+    var totalReceived = clients.reduce(function (s, c) { return s + c.receivedAmount; }, 0);
+    var totalUnreceived = Math.max(0, totalAmount - totalReceived);
+    var foot = section.querySelector(".clients-foot");
+    foot.innerHTML = '<tr>' +
+      '<td>小計 (' + clients.length + ' 筆客戶)</td>' +
+      '<td>' + fmtMoney(totalAmount) + '</td>' +
+      '<td>' + fmtMoney(totalTax) + '</td>' +
+      '<td></td><td></td><td></td><td></td><td></td>' +
+      '<td>' + fmtMoney(totalReceived) + '</td>' +
+      '<td>未收 ' + fmtMoney(totalUnreceived) + '</td>' +
+      '<td></td></tr>';
+  }
+
+  function renderContractorTotals(section) {
+    section.querySelectorAll(".contractor-card").forEach(function (card) {
+      var total = 0, totalQty = 0;
+      card.querySelectorAll(".contractor-items-body tr").forEach(function (tr) {
+        var unitPrice = num(tr.querySelector(".f-unitprice").value);
+        var quantity = num(tr.querySelector(".f-quantity").value);
+        var subtotal = unitPrice * quantity;
+        total += subtotal;
+        totalQty += quantity;
+        tr.querySelector(".item-subtotal").textContent = fmtMoney(subtotal);
+      });
+      card.querySelector(".ct-qty").textContent = "總數量 " + fmtMoney(totalQty);
+      card.querySelector(".ct-amount").textContent = "總金額 $" + fmtMoney(total);
+    });
+  }
+
+  function renderOutsourceSummary(section) {
+    var outsourcers = readOutsourcers(section);
+    var body = section.querySelector(".outsource-summary");
+    if (outsourcers.length === 0) {
+      body.innerHTML = '<tr><td colspan="5" style="color:var(--ink-dim);">本月尚無外包資料</td></tr>';
+      return;
+    }
+    body.innerHTML = outsourcers.map(function (o) {
+      var name = o.name || "(未命名)";
+      return '<tr><td>' + escapeHtml(name) + '</td>' +
+        '<td>' + fmtMoney(o.totalQty) + '</td>' +
+        '<td>' + fmtMoney(o.total) + '</td>' +
+        '<td>' + fmtMoney(o.paidAmount) + '</td>' +
+        '<td>' + fmtMoney(Math.max(0, o.total - o.paidAmount)) + '</td></tr>';
+    }).join("");
+  }
+
+  function renderExpenseFoot(section) {
+    var expenses = readExpenses(section);
+    var total = expenses.reduce(function (s, e) { return s + e.amount; }, 0);
+    var foot = section.querySelector(".expense-foot");
+    foot.innerHTML = '<tr><td>小計</td><td>' + fmtMoney(total) + '</td><td></td><td></td></tr>';
+  }
+
+  function renderStatGrid(section, key) {
+    var stats = computeStats(key);
+    var cards = [
+      { label: "客戶總營收", value: stats.revenue, tone: "accent" },
+      { label: "稅金", value: stats.tax, tone: "" },
+      { label: "外包總支出", value: stats.outsourceCost, tone: "danger" },
+      { label: "其他支出", value: stats.otherExpense, tone: "danger" },
+      { label: "淨利", value: stats.netProfit, tone: stats.netProfit >= 0 ? "success" : "danger" },
+      { label: "應收未收", value: stats.unreceived, tone: stats.unreceived > 0 ? "warn" : "" },
+      { label: "應付未付", value: stats.unpaid, tone: stats.unpaid > 0 ? "warn" : "" }
+    ];
+    var grid = section.querySelector(".stat-grid:not(.production-grid)");
+    grid.innerHTML = cards.map(function (c) {
+      return '<div class="stat-card' + (c.tone ? " tone-" + c.tone : "") + '">' +
+        '<div class="label">' + c.label + '</div>' +
+        '<div class="value">' + fmtMoney(c.value) + '</div></div>';
+    }).join("");
+
+    renderProductionGrid(section, stats);
+  }
+
+  function renderProductionGrid(section, stats) {
+    var cards = [
+      { label: "拍攝天數", value: stats.shootDays, tone: "accent" },
+      { label: "總腳本數", value: stats.scriptCount, tone: "" },
+      { label: "腳本外包數", value: stats.outsourcedScriptQty, tone: stats.outsourcedScriptQty > 0 ? "warn" : "" },
+      { label: "總影片數", value: stats.videoCount, tone: "" },
+      { label: "影片外包數", value: stats.outsourcedVideoQty, tone: stats.outsourcedVideoQty > 0 ? "warn" : "" }
+    ];
+    var grid = section.querySelector(".production-grid");
+    grid.innerHTML = cards.map(function (c) {
+      return '<div class="stat-card' + (c.tone ? " tone-" + c.tone : "") + '">' +
+        '<div class="label">' + c.label + '</div>' +
+        '<div class="value">' + fmtMoney(c.value) + '</div></div>';
+    }).join("");
+  }
+
+  function renderTrendChart(section, key) {
+    var months = [];
+    for (var i = 11; i >= 0; i--) months.push(shiftMonth(key, -i));
+    var series = months.map(function (k) {
+      var s = computeStats(k);
+      return { key: k, revenue: s.revenue, expense: s.tax + s.outsourceCost + s.otherExpense, profit: s.netProfit };
+    });
+    var maxVal = Math.max(1, Math.max.apply(null, series.map(function (s) {
+      return Math.max(s.revenue, s.expense, Math.abs(s.profit));
+    })));
+    var w = Math.max(720, months.length * 92);
+    var h = 240, chartH = 168, baseY = 40 + chartH;
+    var groupW = w / months.length, barW = 14;
+
+    var parts = [];
+    parts.push('<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Mono, monospace">');
+    parts.push('<line x1="0" y1="' + baseY + '" x2="' + w + '" y2="' + baseY + '" style="stroke:var(--line);stroke-width:1"></line>');
+    series.forEach(function (s, idx) {
+      var gx = idx * groupW + groupW / 2;
+      var revH = (s.revenue / maxVal) * chartH;
+      var expH = (s.expense / maxVal) * chartH;
+      var profH = (Math.abs(s.profit) / maxVal) * chartH;
+      var profColor = s.profit >= 0 ? "var(--success)" : "var(--warn)";
+      parts.push(bar(gx - barW - 4, baseY - revH, barW, revH, "var(--accent)"));
+      parts.push(bar(gx - barW / 2, baseY - expH, barW, expH, "var(--danger)"));
+      parts.push(bar(gx + barW - 4, s.profit >= 0 ? baseY - profH : baseY, barW, profH, profColor));
+      parts.push('<text x="' + gx + '" y="' + (baseY + 18) + '" font-size="11" style="fill:var(--ink-dim)" text-anchor="middle">' + s.key.slice(2) + '</text>');
+    });
+    parts.push('<text x="4" y="16" font-size="12" style="fill:var(--accent)">■ 營收</text>');
+    parts.push('<text x="66" y="16" font-size="12" style="fill:var(--danger)">■ 支出</text>');
+    parts.push('<text x="126" y="16" font-size="12" style="fill:var(--success)">■ 淨利</text>');
+    parts.push("</svg>");
+    section.querySelector(".trend-chart").innerHTML = parts.join("");
+  }
+
+  function bar(x, y, w, h, color) {
+    if (h < 0) { y += h; h = -h; }
+    return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + Math.max(0, h) + '" style="fill:' + color + '" rx="2"></rect>';
+  }
+
+  function recomputeSection(key) {
+    var section = getMonthSection(key);
+    if (!section) return;
+    renderClientsFoot(section);
+    renderContractorTotals(section);
+    renderOutsourceSummary(section);
+    renderExpenseFoot(section);
+    renderStatGrid(section, key);
+    renderTrendChart(section, key);
+  }
+
+  // ---------- view state (per-device, not synced) ----------
+
+  function updateCopyButtonsVisibility() {
+    var section = getMonthSection(state.currentMonth);
+    if (!section) return;
+    var prevSection = getMonthSection(shiftMonth(state.currentMonth, -1));
+    var hasClients = section.querySelectorAll(".clients-body tr").length > 0;
+    var hasOutsource = section.querySelectorAll(".contractor-card").length > 0;
+    var prevHasClients = prevSection && prevSection.querySelectorAll(".clients-body tr").length > 0;
+    var prevHasOutsource = prevSection && prevSection.querySelectorAll(".contractor-card").length > 0;
+    section.querySelector(".copy-last-clients-btn").hidden = !(!hasClients && prevHasClients);
+    section.querySelector(".copy-last-outsource-btn").hidden = !(!hasOutsource && prevHasOutsource);
+  }
+
+  function renderView() {
+    document.body.dataset.localTab = state.currentTab;
+    document.querySelectorAll(".tab-btn").forEach(function (b) {
+      b.classList.toggle("active", b.dataset.tab === state.currentTab);
+    });
+    var picker = document.getElementById("monthPicker");
+    if (picker.value !== state.currentMonth) picker.value = state.currentMonth;
+
+    document.querySelectorAll(".month-section").forEach(function (s) {
+      s.dataset.localHidden = (s.dataset.month === state.currentMonth) ? "false" : "true";
+    });
+
+    var section = getMonthSection(state.currentMonth);
+    var showEmpty = !section && state.currentTab !== "data";
+    document.getElementById("emptyState").dataset.localHidden = showEmpty ? "false" : "true";
+    document.getElementById("emptyStateMonthLabel").textContent = monthLabel(state.currentMonth) + "還沒有資料";
+
+    if (section) {
+      updateCopyButtonsVisibility();
+      recomputeSection(state.currentMonth);
+    }
+  }
+
+  function setTab(tab) {
+    state.currentTab = tab;
+    try { localStorage.setItem("piancang_last_tab", tab); } catch (e) {}
+    renderView();
+  }
+  function setMonth(key) {
+    state.currentMonth = key;
+    renderView();
+  }
+
+  // two-step confirm for destructive buttons: native confirm()/alert() dialogs
+  // are blocked inside the sandboxed artifact frame, so we arm-then-confirm
+  // in the button itself instead. These buttons are all marked artifact-local,
+  // so mutating their label on a timeout (no gesture behind it) is safe.
+  function confirmOrArm(btn) {
+    if (btn.dataset.armed === "1") {
+      btn.dataset.armed = "";
+      btn.classList.remove("armed");
+      btn.textContent = "✕";
+      if (btn._armTimer) { clearTimeout(btn._armTimer); btn._armTimer = null; }
+      return true;
+    }
+    btn.dataset.armed = "1";
+    btn.classList.add("armed");
+    btn.textContent = "確定?";
+    btn._armTimer = setTimeout(function () {
+      btn.dataset.armed = "";
+      btn.classList.remove("armed");
+      btn.textContent = "✕";
+    }, 3000);
+    return false;
+  }
+
+  // ---------- event wiring ----------
+
+  document.querySelectorAll(".tab-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () { setTab(btn.dataset.tab); });
+  });
+
+  document.getElementById("monthPicker").addEventListener("change", function (e) {
+    if (e.target.value) setMonth(e.target.value);
+  });
+  document.getElementById("prevMonthBtn").addEventListener("click", function () {
+    setMonth(shiftMonth(state.currentMonth, -1));
+  });
+  document.getElementById("nextMonthBtn").addEventListener("click", function () {
+    setMonth(shiftMonth(state.currentMonth, 1));
+  });
+
+  document.getElementById("emptyCreateBtn").addEventListener("click", function () {
+    ensureMonthSection(state.currentMonth);
+    renderView();
+    onDataChanged();
+  });
+  document.getElementById("emptyCopyBtn").addEventListener("click", function () {
+    ensureMonthSection(state.currentMonth);
+    copyLastClients(state.currentMonth);
+    copyLastOutsourcers(state.currentMonth);
+    renderView();
+    onDataChanged();
+  });
+
+  // delegated events on #monthsRoot cover every month-section, present or future
+  var monthsRoot = document.getElementById("monthsRoot");
+
+  monthsRoot.addEventListener("click", function (e) {
+    var section = e.target.closest(".month-section");
+    if (!section) return;
+    var key = section.dataset.month;
+    var changed = false;
+
+    if (e.target.classList.contains("add-client-btn")) {
+      addClientRow(section);
+      changed = true;
+    } else if (e.target.classList.contains("add-contractor-btn")) {
+      addContractorCard(section);
+      changed = true;
+    } else if (e.target.classList.contains("add-item-btn")) {
+      addItemRow(e.target.closest(".contractor-card"));
+      changed = true;
+    } else if (e.target.classList.contains("add-expense-btn")) {
+      addExpenseRow(section);
+      changed = true;
+    } else if (e.target.classList.contains("copy-last-clients-btn")) {
+      changed = copyLastClients(key);
+    } else if (e.target.classList.contains("copy-last-outsource-btn")) {
+      changed = copyLastOutsourcers(key);
+    } else if (e.target.classList.contains("client-del-btn") || e.target.classList.contains("expense-del-btn") || e.target.classList.contains("item-del-btn")) {
+      if (confirmOrArm(e.target)) {
+        e.target.closest("tr").remove();
+        changed = true;
+      }
+    } else if (e.target.classList.contains("contractor-del-btn")) {
+      if (confirmOrArm(e.target)) {
+        e.target.closest(".contractor-card").remove();
+        changed = true;
+      }
+    } else if (e.target.classList.contains("status-btn")) {
+      e.target.closest(".status-toggle").dataset.status = e.target.dataset.value;
+      changed = true;
+    }
+
+    if (changed) {
+      recomputeSection(key);
+      updateCopyButtonsVisibility();
+      onDataChanged();
+    }
+  });
+
+  monthsRoot.addEventListener("input", function (e) {
+    var section = e.target.closest(".month-section");
+    if (!section) return;
+    recomputeSection(section.dataset.month);
+    onDataChanged();
+  });
+
+  // ---------- persistence ----------
+  // Two layers: localStorage (this browser only, instant, always available —
+  // the safety net) and Firebase Realtime Database (one shared node, live
+  // cross-device sync via onValue — every open device gets pushed the update,
+  // no manual refresh needed).
+
+  var LOCAL_KEY = "piancang_store_v1";
+  var persistTimer = null;
+  var persistInFlight = false;
+  var persistDirty = false;
+  var lastSentJson = null;
+  var applyingRemote = false;
+  var firstSnapshot = true;
+  var pendingRemoteData = null;
+
+  function saveLocal() {
+    try { localStorage.setItem(LOCAL_KEY, JSON.stringify(collectAllData())); } catch (e) {}
+  }
+  function loadLocal() {
+    try {
+      var raw = localStorage.getItem(LOCAL_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+
+  function onDataChanged() {
+    if (applyingRemote) return; // a remote snapshot is being applied — not a real local edit
+    saveLocal();
+    schedulePersist();
+  }
+
+  function setSyncStatus(stateName, label) {
+    var badge = document.getElementById("syncBadge");
+    if (!badge) return;
+    badge.dataset.state = stateName;
+    var labels = {
+      idle: "連線雲端中…",
+      saving: "儲存中…",
+      saved: "已同步（跨裝置）",
+      error: "雲端同步失敗，已存在本機",
+      "local-only": "已存在本機，跨裝置同步不可用",
+      "update-available": "有其他裝置的新資料，點此更新"
+    };
+    badge.querySelector(".sync-label").textContent = label || labels[stateName] || "";
+  }
+
+  function schedulePersist() {
+    if (persistTimer) clearTimeout(persistTimer);
+    persistTimer = setTimeout(persistNow, 1000);
+  }
+
+  function persistNow() {
+    persistTimer = null;
+    if (persistInFlight) { persistDirty = true; return; }
+    persistInFlight = true;
+    setSyncStatus("saving");
+    var json = JSON.stringify(collectAllData());
+    lastSentJson = json;
+    set(docRef, { json: json, updatedAt: Date.now() }).then(function () {
+      persistInFlight = false;
+      setSyncStatus("saved");
+      if (persistDirty) { persistDirty = false; schedulePersist(); }
+    }).catch(function (err) {
+      persistInFlight = false;
+      console.error(err);
+      setSyncStatus("error");
+      setTimeout(schedulePersist, 3000);
+    });
+  }
+
+  function isEditingNow() {
+    var root = document.getElementById("monthsRoot");
+    var el = document.activeElement;
+    if (!el || !root.contains(el)) return false;
+    return el.tagName === "INPUT" || el.tagName === "SELECT" || el.tagName === "TEXTAREA";
+  }
+
+  function applyRemoteData(data) {
+    applyingRemote = true;
+    document.getElementById("monthsRoot").innerHTML = "";
+    buildAllMonthsFromData(data);
+    renderView();
+    saveLocal();
+    applyingRemote = false;
+  }
+
+  function startCloudSync() {
+    onValue(docRef, function (snap) {
+      var val = snap.val();
+      if (!val || !val.json) {
+        firstSnapshot = false;
+        setSyncStatus("saved");
+        return;
+      }
+      var json = val.json;
+      if (json === lastSentJson) {
+        firstSnapshot = false;
+        setSyncStatus("saved");
+        return;
+      }
+      var parsed;
+      try { parsed = JSON.parse(json); } catch (e) { firstSnapshot = false; return; }
+
+      if (!firstSnapshot && isEditingNow()) {
+        pendingRemoteData = parsed;
+        lastSentJson = json;
+        setSyncStatus("update-available");
+      } else {
+        applyRemoteData(parsed);
+        lastSentJson = json;
+        setSyncStatus("saved");
+      }
+      firstSnapshot = false;
+    }, function (err) {
+      console.error(err);
+      setSyncStatus("local-only");
+    });
+  }
+
+  document.getElementById("syncBadge").addEventListener("click", function () {
+    if (!pendingRemoteData) return;
+    var data = pendingRemoteData;
+    pendingRemoteData = null;
+    applyRemoteData(data);
+    setSyncStatus("saved");
+  });
+
+  // ---------- backup / export (data tab) ----------
+
+  function collectAllData() {
+    var months = {};
+    document.querySelectorAll(".month-section").forEach(function (section) {
+      var key = section.dataset.month;
+      months[key] = {
+        clients: readClients(section),
+        outsourcers: readOutsourcers(section),
+        otherExpenses: readExpenses(section)
+      };
+    });
+    return { months: months, exportedAt: new Date().toISOString() };
+  }
+
+  function csvSafe(v) {
+    v = (v === undefined || v === null) ? "" : String(v);
+    if (v.indexOf(",") !== -1 || v.indexOf('"') !== -1 || v.indexOf("\n") !== -1) {
+      v = '"' + v.replace(/"/g, '""') + '"';
+    }
+    return v;
+  }
+
+  function buildCsvForMonth(key) {
+    var section = getMonthSection(key);
+    var clients = readClients(section);
+    var outsourcers = readOutsourcers(section);
+    var expenses = readExpenses(section);
+    var stats = computeStats(key);
+    var lines = [];
+    lines.push("片場帳本月報表," + monthLabel(key));
+    lines.push("");
+    lines.push("客戶明細");
+    lines.push(["客戶名稱", "金額", "稅金", "腳本數量", "剪輯數量", "拍攝天數", "影片數量", "收款狀態", "實收金額", "備註"].join(","));
+    clients.forEach(function (c) {
+      lines.push([csvSafe(c.name), c.amount, c.tax, c.scriptCount, c.editCount, c.shootDays, c.videoCount, statusLabel(c.paymentStatus), c.receivedAmount, csvSafe(c.note)].join(","));
+    });
+    lines.push("");
+    lines.push("外包明細");
+    lines.push(["外包名稱", "負責客戶", "內容", "類型", "單價", "數量", "小計", "付款狀態", "實付金額"].join(","));
+    outsourcers.forEach(function (o) {
+      if (o.items.length === 0) {
+        lines.push([csvSafe(o.name), "", "", "", "", "", "", statusLabel(o.paymentStatus), o.paidAmount].join(","));
+      } else {
+        o.items.forEach(function (it) {
+          lines.push([csvSafe(o.name), csvSafe(it.clientRef), csvSafe(it.content), typeLabel(it.type), it.unitPrice, it.quantity, it.subtotal, statusLabel(o.paymentStatus), o.paidAmount].join(","));
+        });
+      }
+    });
+    lines.push("");
+    lines.push("其他支出");
+    lines.push(["項目名稱", "金額", "備註"].join(","));
+    expenses.forEach(function (e) {
+      lines.push([csvSafe(e.name), e.amount, csvSafe(e.note)].join(","));
+    });
+    lines.push("");
+    lines.push("月度總覽");
+    lines.push("客戶總營收," + stats.revenue);
+    lines.push("稅金," + stats.tax);
+    lines.push("外包總支出," + stats.outsourceCost);
+    lines.push("其他支出," + stats.otherExpense);
+    lines.push("淨利," + stats.netProfit);
+    lines.push("應收未收," + stats.unreceived);
+    lines.push("應付未付," + stats.unpaid);
+    lines.push("");
+    lines.push("本月產量");
+    lines.push("拍攝天數," + stats.shootDays);
+    lines.push("總腳本數," + stats.scriptCount);
+    lines.push("腳本外包數," + stats.outsourcedScriptQty);
+    lines.push("總影片數," + stats.videoCount);
+    lines.push("影片外包數," + stats.outsourcedVideoQty);
+    return "﻿" + lines.join("\r\n");
+  }
+
+  document.getElementById("exportJsonBtn").addEventListener("click", function () {
+    var content = JSON.stringify(collectAllData(), null, 2);
+    withDownloads(function (downloads) {
+      var stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      return downloads.save({ filename: "piancang_backup_" + stamp + ".json", data: content });
+    }, content);
+  });
+
+  document.getElementById("exportCsvBtn").addEventListener("click", function () {
+    var content = buildCsvForMonth(state.currentMonth);
+    withDownloads(function (downloads) {
+      var filename = "monthly_report_" + state.currentMonth + ".csv";
+      return downloads.save({ filename: filename, data: content }).catch(function (err) {
+        if (err && (err.code === "extension_not_enabled" || err.code === "rejected_extension")) {
+          return downloads.save({ filename: "monthly_report_" + state.currentMonth + ".txt", data: content });
+        }
+        throw err;
+      });
+    }, content);
+  });
+
+  document.getElementById("showBackupTextBtn").addEventListener("click", function () {
+    showBackupText(JSON.stringify(collectAllData(), null, 2));
+  });
+
+  document.getElementById("importJsonInput").addEventListener("change", function (ev) {
+    var file = ev.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var parsed = JSON.parse(reader.result);
+        if (!parsed || typeof parsed !== "object" || !parsed.months) {
+          showDataStatus("檔案格式不正確，找不到 months 欄位。", true);
+          return;
+        }
+        document.getElementById("monthsRoot").innerHTML = "";
+        buildAllMonthsFromData(parsed);
+        renderView();
+        onDataChanged();
+        showDataStatus("匯入成功！", false);
+      } catch (e) {
+        showDataStatus("讀取檔案失敗，請確認是有效的 JSON 備份檔。", true);
+      }
+      ev.target.value = "";
+    };
+    reader.readAsText(file);
+  });
+
+  function showBackupText(content) {
+    var ta = document.getElementById("backupTextArea");
+    ta.value = content;
+    ta.hidden = false;
+    ta.focus();
+    ta.select();
+    showDataStatus("已顯示備份文字，全選（Ctrl+A / Cmd+A）後複製即可。", false);
+  }
+
+  function showDataStatus(msg, isError) {
+    var el = document.getElementById("dataStatusMsg");
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.toggle("is-error", !!isError);
+    if (el._clearTimer) clearTimeout(el._clearTimer);
+    el._clearTimer = setTimeout(function () {
+      el.textContent = "";
+      el.classList.remove("is-error");
+    }, 6000);
+  }
+
+  function withDownloads(fn, fallbackContent) {
+    if (!window.claude || !window.claude.use) {
+      if (fallbackContent !== undefined) { showBackupText(fallbackContent); return; }
+      showDataStatus("目前環境不支援檔案下載，請改用有支援的裝置開啟。", true);
+      return;
+    }
+    window.claude.use("downloads").then(function (downloads) {
+      if (!downloads) {
+        if (fallbackContent !== undefined) { showBackupText(fallbackContent); return; }
+        showDataStatus("目前這個視窗不支援檔案下載。", true);
+        return;
+      }
+      fn(downloads).then(function () {
+        showDataStatus("已匯出，請查看下載內容。", false);
+      }).catch(function (err) {
+        if (err && err.code === "declined") return;
+        console.error(err);
+        if (fallbackContent !== undefined) { showBackupText(fallbackContent); return; }
+        showDataStatus("匯出失敗：" + (err && err.message ? err.message : "未知錯誤"), true);
+      });
+    });
+  }
+
+  // ---------- init ----------
+
+  function init() {
+    // render instantly from whatever this browser already has cached,
+    // then reconcile with the database's first snapshot the moment it arrives
+    var localData = loadLocal();
+    if (localData) buildAllMonthsFromData(localData);
+    renderView();
+    setSyncStatus("idle");
+    startCloudSync();
+  }
+
+  init();
+})();
+</script>
+</html>
