@@ -538,6 +538,16 @@
   .data-card h2 { margin: 0 0 8px; font-size: 15.5px; }
   .data-card p.hint { margin: 0 0 14px; color: var(--ink-dim); font-size: 13px; line-height: 1.7; }
   .btn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  #exportMonthPicker {
+    padding: 9px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--ink);
+    font-family: "IBM Plex Mono", monospace;
+    font-weight: 600;
+    font-size: 13.5px;
+  }
   .data-status { font-size: 13px; color: var(--ink-dim); margin: 10px 0 0; }
   .data-status.is-error { color: var(--danger); }
   .data-status:empty { display: none; }
@@ -652,11 +662,23 @@
   </div>
 
   <div class="data-card">
+    <h2>月份報表匯出</h2>
+    <p class="hint">選擇月份，各自獨立匯出：</p>
+    <div class="btn-row">
+      <select id="exportMonthPicker" aria-label="選擇匯出月份"></select>
+    </div>
+    <div class="btn-row">
+      <button type="button" class="btn btn-primary" id="exportMonthlyCsvBtn">匯出簡易月報 (CSV)</button>
+      <button type="button" class="btn" id="exportClientsCsvBtn">匯出客戶總覽 (CSV)</button>
+      <button type="button" class="btn" id="exportOutsourceCsvBtn">匯出外包管理 (CSV)</button>
+    </div>
+  </div>
+
+  <div class="data-card">
     <h2>備份匯出</h2>
     <p class="hint">想額外留一份存檔（例如給會計師、或搬到別的系統），可以匯出以下檔案：</p>
     <div class="btn-row">
       <button type="button" class="btn btn-primary" id="exportJsonBtn">匯出全部資料 (JSON)</button>
-      <button type="button" class="btn" id="exportCsvBtn">匯出本月報表 (CSV)</button>
       <button type="button" class="btn btn-ghost" id="showBackupTextBtn">顯示備份文字（複製用）</button>
     </div>
     <p class="data-status" id="dataStatusMsg"></p>
@@ -1309,6 +1331,8 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
       updateCopyButtonsVisibility();
       recomputeSection(state.currentMonth);
     }
+
+    populateExportMonthPicker();
   }
 
   function setTab(tab) {
@@ -1591,38 +1615,10 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
     return v;
   }
 
-  function buildCsvForMonth(key) {
-    var section = getMonthSection(key);
-    var clients = readClients(section);
-    var outsourcers = readOutsourcers(section);
-    var expenses = readExpenses(section);
+  function buildSimpleMonthlyCsv(key) {
     var stats = computeStats(key);
     var lines = [];
-    lines.push("MG短影音營收月報表," + monthLabel(key));
-    lines.push("");
-    lines.push("客戶明細");
-    lines.push(["客戶名稱", "金額", "稅金", "腳本數量", "剪輯數量", "拍攝天數", "影片數量", "收款狀態", "實收金額", "備註"].join(","));
-    clients.forEach(function (c) {
-      lines.push([csvSafe(c.name), c.amount, c.tax, c.scriptCount, c.editCount, c.shootDays, c.videoCount, statusLabel(c.paymentStatus), c.receivedAmount, csvSafe(c.note)].join(","));
-    });
-    lines.push("");
-    lines.push("外包明細");
-    lines.push(["外包名稱", "負責客戶", "內容", "類型", "單價", "數量", "小計", "付款狀態", "實付金額"].join(","));
-    outsourcers.forEach(function (o) {
-      if (o.items.length === 0) {
-        lines.push([csvSafe(o.name), "", "", "", "", "", "", statusLabel(o.paymentStatus), o.paidAmount].join(","));
-      } else {
-        o.items.forEach(function (it) {
-          lines.push([csvSafe(o.name), csvSafe(it.clientRef), csvSafe(it.content), typeLabel(it.type), it.unitPrice, it.quantity, it.subtotal, statusLabel(o.paymentStatus), o.paidAmount].join(","));
-        });
-      }
-    });
-    lines.push("");
-    lines.push("其他支出");
-    lines.push(["項目名稱", "金額", "備註"].join(","));
-    expenses.forEach(function (e) {
-      lines.push([csvSafe(e.name), e.amount, csvSafe(e.note)].join(","));
-    });
+    lines.push("MG短影音營收簡易月報," + monthLabel(key));
     lines.push("");
     lines.push("月度總覽");
     lines.push("客戶總營收," + stats.revenue);
@@ -1642,6 +1638,84 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
     return "﻿" + lines.join("\r\n");
   }
 
+  function buildClientsCsv(key) {
+    var section = getMonthSection(key);
+    var clients = readClients(section);
+    var lines = [];
+    lines.push("客戶總覽," + monthLabel(key));
+    lines.push("");
+    lines.push(["客戶名稱", "金額", "稅金", "腳本數量", "剪輯數量", "拍攝天數", "影片數量", "收款狀態", "實收金額", "備註"].join(","));
+    clients.forEach(function (c) {
+      lines.push([csvSafe(c.name), c.amount, c.tax, c.scriptCount, c.editCount, c.shootDays, c.videoCount, statusLabel(c.paymentStatus), c.receivedAmount, csvSafe(c.note)].join(","));
+    });
+    var totalAmount = clients.reduce(function (s, c) { return s + c.amount; }, 0);
+    var totalTax = clients.reduce(function (s, c) { return s + c.tax; }, 0);
+    var totalReceived = clients.reduce(function (s, c) { return s + c.receivedAmount; }, 0);
+    lines.push("");
+    lines.push("小計");
+    lines.push("客戶總營收," + totalAmount);
+    lines.push("稅金," + totalTax);
+    lines.push("實收金額," + totalReceived);
+    lines.push("應收未收," + Math.max(0, totalAmount - totalReceived));
+    return "﻿" + lines.join("\r\n");
+  }
+
+  function buildOutsourceCsv(key) {
+    var section = getMonthSection(key);
+    var outsourcers = readOutsourcers(section);
+    var lines = [];
+    lines.push("外包管理," + monthLabel(key));
+    lines.push("");
+    lines.push(["外包名稱", "負責客戶", "內容", "類型", "單價", "數量", "小計", "付款狀態", "實付金額"].join(","));
+    outsourcers.forEach(function (o) {
+      if (o.items.length === 0) {
+        lines.push([csvSafe(o.name), "", "", "", "", "", "", statusLabel(o.paymentStatus), o.paidAmount].join(","));
+      } else {
+        o.items.forEach(function (it) {
+          lines.push([csvSafe(o.name), csvSafe(it.clientRef), csvSafe(it.content), typeLabel(it.type), it.unitPrice, it.quantity, it.subtotal, statusLabel(o.paymentStatus), o.paidAmount].join(","));
+        });
+      }
+    });
+    var totalCost = outsourcers.reduce(function (s, o) { return s + o.total; }, 0);
+    var totalPaid = outsourcers.reduce(function (s, o) { return s + o.paidAmount; }, 0);
+    lines.push("");
+    lines.push("小計");
+    lines.push("總金額," + totalCost);
+    lines.push("已付金額," + totalPaid);
+    lines.push("未付金額," + Math.max(0, totalCost - totalPaid));
+    return "﻿" + lines.join("\r\n");
+  }
+
+  function downloadCsv(filename, content) {
+    withDownloads(function (downloads) {
+      return downloads.save({ filename: filename, data: content }).catch(function (err) {
+        if (err && (err.code === "extension_not_enabled" || err.code === "rejected_extension")) {
+          return downloads.save({ filename: filename.replace(/\.csv$/, ".txt"), data: content });
+        }
+        throw err;
+      });
+    }, content);
+  }
+
+  function populateExportMonthPicker() {
+    var select = document.getElementById("exportMonthPicker");
+    if (!select) return;
+    var months = Array.prototype.map.call(document.querySelectorAll(".month-section"), function (s) { return s.dataset.month; });
+    months.sort();
+    months.reverse();
+    var previous = select.value;
+    select.innerHTML = months.map(function (m) {
+      return '<option value="' + m + '">' + monthLabel(m) + '</option>';
+    }).join("");
+    if (months.indexOf(previous) !== -1) select.value = previous;
+    else if (months.indexOf(state.currentMonth) !== -1) select.value = state.currentMonth;
+  }
+
+  function getExportMonth() {
+    var select = document.getElementById("exportMonthPicker");
+    return select && select.value ? select.value : null;
+  }
+
   document.getElementById("exportJsonBtn").addEventListener("click", function () {
     var content = JSON.stringify(collectAllData(), null, 2);
     withDownloads(function (downloads) {
@@ -1650,17 +1724,20 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
     }, content);
   });
 
-  document.getElementById("exportCsvBtn").addEventListener("click", function () {
-    var content = buildCsvForMonth(state.currentMonth);
-    withDownloads(function (downloads) {
-      var filename = "monthly_report_" + state.currentMonth + ".csv";
-      return downloads.save({ filename: filename, data: content }).catch(function (err) {
-        if (err && (err.code === "extension_not_enabled" || err.code === "rejected_extension")) {
-          return downloads.save({ filename: "monthly_report_" + state.currentMonth + ".txt", data: content });
-        }
-        throw err;
-      });
-    }, content);
+  document.getElementById("exportMonthlyCsvBtn").addEventListener("click", function () {
+    var month = getExportMonth();
+    if (!month) { showDataStatus("目前沒有可匯出的月份。", true); return; }
+    downloadCsv("simple_report_" + month + ".csv", buildSimpleMonthlyCsv(month));
+  });
+  document.getElementById("exportClientsCsvBtn").addEventListener("click", function () {
+    var month = getExportMonth();
+    if (!month) { showDataStatus("目前沒有可匯出的月份。", true); return; }
+    downloadCsv("clients_" + month + ".csv", buildClientsCsv(month));
+  });
+  document.getElementById("exportOutsourceCsvBtn").addEventListener("click", function () {
+    var month = getExportMonth();
+    if (!month) { showDataStatus("目前沒有可匯出的月份。", true); return; }
+    downloadCsv("outsource_" + month + ".csv", buildOutsourceCsv(month));
   });
 
   document.getElementById("showBackupTextBtn").addEventListener("click", function () {
