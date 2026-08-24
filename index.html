@@ -1410,6 +1410,20 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
       }
     } else if (e.target.classList.contains("status-btn")) {
       e.target.closest(".status-toggle").dataset.status = e.target.dataset.value;
+      if (e.target.dataset.value === "paid") {
+        var clientRow = e.target.closest(".clients-body tr");
+        var contractorCard = e.target.closest(".contractor-card");
+        if (clientRow) {
+          var amount = num(clientRow.querySelector(".f-amount").value);
+          clientRow.querySelector(".f-received").value = amount || "";
+        } else if (contractorCard) {
+          var total = 0;
+          contractorCard.querySelectorAll(".contractor-items-body tr").forEach(function (tr) {
+            total += num(tr.querySelector(".f-unitprice").value) * num(tr.querySelector(".f-quantity").value);
+          });
+          contractorCard.querySelector(".f-paid").value = total || "";
+        }
+      }
       changed = true;
     }
 
