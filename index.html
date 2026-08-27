@@ -383,9 +383,9 @@
   }
   .cal-head, .cal-grid {
     display: grid;
-    grid-template-columns: repeat(7, minmax(96px, 1fr));
+    grid-template-columns: repeat(7, minmax(122px, 1fr));
     gap: 6px;
-    min-width: 700px;
+    min-width: 880px;
   }
   .cal-head { margin-bottom: 6px; }
   .cal-head div {
@@ -419,22 +419,40 @@
   .cal-entries { display: flex; flex-direction: column; gap: 3px; }
   .cal-entry {
     display: flex;
-    align-items: center;
-    gap: 4px;
+    flex-direction: column;
+    gap: 2px;
     background: var(--accent-dim);
     color: var(--accent);
     border-radius: 5px;
-    padding: 3px 5px;
+    padding: 4px 5px;
     font-size: 12px;
     font-weight: 600;
     line-height: 1.3;
   }
-  .cal-entry span {
+  .cal-entry-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .cal-entry-name {
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  .cal-entry-time {
+    width: 100%;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--ink);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    padding: 2px 3px;
+    box-sizing: border-box;
+  }
+  .cal-entry-time:hover { border-color: var(--accent); }
+  .cal-entry-time:focus { border-color: var(--accent); outline: none; }
   .cal-entry-del {
     border: none;
     background: transparent;
@@ -515,6 +533,17 @@
     color: var(--ink-dim);
     text-align: right;
   }
+  .sched-dates.is-muted { opacity: 0.7; font-style: italic; }
+  .sched-short { color: var(--warn); font-weight: 700; }
+  .sched-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 999px;
+    margin-left: 4px;
+    white-space: nowrap;
+  }
+  .sched-tag.is-over { background: var(--warn-dim); color: var(--warn); }
   .sched-empty { color: var(--ink-dim); font-size: 13px; }
 
   /* ---------- dashboard ---------- */
@@ -1179,7 +1208,12 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
     var out = [];
     section.querySelectorAll(".cal-day[data-date]").forEach(function (day) {
       day.querySelectorAll(".cal-entry").forEach(function (entry) {
-        out.push({ date: day.dataset.date, clientName: entry.dataset.client || "" });
+        var timeInput = entry.querySelector(".cal-entry-time");
+        out.push({
+          date: day.dataset.date,
+          clientName: entry.dataset.client || "",
+          time: timeInput ? timeInput.value : ""
+        });
       });
     });
     return out;
@@ -1193,10 +1227,14 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
     var parts = key.split("-").map(Number);
     return new Date(parts[0], parts[1] - 1, 1).getDay(); // 0 = Sunday
   }
-  function entryHTML(clientName) {
+  function entryHTML(clientName, time) {
     return '<div class="cal-entry" data-client="' + escapeAttr(clientName) + '">' +
-      '<span>' + escapeHtml(clientName) + '</span>' +
-      '<button type="button" class="cal-entry-del" title="移除">×</button></div>';
+      '<div class="cal-entry-row">' +
+        '<span class="cal-entry-name">' + escapeHtml(clientName) + '</span>' +
+        '<button type="button" class="cal-entry-del" title="移除">×</button>' +
+      '</div>' +
+      '<input type="time" class="cal-entry-time" value="' + escapeAttr(time || "") + '" title="拍攝時間">' +
+      '</div>';
   }
 
   function ensureCalendarGrid(section, key) {
@@ -1227,7 +1265,7 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
     existing.forEach(function (e) {
       if (e.date.indexOf(key) !== 0) return;
       var cell = grid.querySelector('.cal-day[data-date="' + e.date + '"] .cal-entries');
-      if (cell) cell.insertAdjacentHTML("beforeend", entryHTML(e.clientName));
+      if (cell) cell.insertAdjacentHTML("beforeend", entryHTML(e.clientName, e.time));
     });
     updateCalendarDayStates(section);
   }
@@ -1250,43 +1288,75 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
   }
 
   function renderScheduleSummary(section) {
-    var names = getClientNames(section);
-    var schedule = readSchedule(section);
-    var byClient = {};
-    schedule.forEach(function (e) {
-      if (!e.clientName) return;
-      if (!byClient[e.clientName]) byClient[e.clientName] = [];
-      byClient[e.clientName].push(Number(e.date.slice(8)));
+    // 需要的天數來自客戶總覽的「拍攝天數」，已安排天數來自行事曆
+    var needByClient = {};
+    var order = [];
+    section.querySelectorAll(".clients-body tr").forEach(function (tr) {
+      var name = tr.querySelector(".f-name").value.trim();
+      if (!name) return;
+      if (!(name in needByClient)) { needByClient[name] = 0; order.push(name); }
+      needByClient[name] += num(tr.querySelector(".f-shootdays").value);
     });
 
-    var scheduled = [];
-    var unscheduled = [];
-    names.forEach(function (n) {
-      if (byClient[n]) scheduled.push(n);
-      else unscheduled.push(n);
+    var bookedByClient = {};
+    readSchedule(section).forEach(function (e) {
+      if (!e.clientName) return;
+      if (!bookedByClient[e.clientName]) bookedByClient[e.clientName] = [];
+      bookedByClient[e.clientName].push({ day: Number(e.date.slice(8)), time: e.time || "" });
     });
-    // clients scheduled but no longer in the client list (renamed/removed)
-    Object.keys(byClient).forEach(function (n) {
-      if (names.indexOf(n) === -1) scheduled.push(n);
+    // 已排到但已不在客戶清單裡的（被改名或刪除）也要看得到
+    Object.keys(bookedByClient).forEach(function (n) {
+      if (!(n in needByClient)) { needByClient[n] = 0; order.push(n); }
     });
+
+    var done = [];
+    var todo = [];
+    order.forEach(function (n) {
+      var need = needByClient[n];
+      var booked = bookedByClient[n] || [];
+      var row = { name: n, need: need, booked: booked, remaining: need - booked.length };
+      if (booked.length >= need && (need > 0 || booked.length > 0)) done.push(row);
+      else todo.push(row);
+    });
+    todo.sort(function (a, b) { return b.remaining - a.remaining; });
+
+    var totalRemaining = todo.reduce(function (s, r) { return s + Math.max(0, r.remaining); }, 0);
+
+    function formatDays(booked) {
+      return booked.slice().sort(function (a, b) {
+        if (a.day !== b.day) return a.day - b.day;
+        return (a.time || "").localeCompare(b.time || "");
+      }).map(function (b) {
+        return b.day + "日" + (b.time ? " " + b.time : "");
+      }).join("、");
+    }
 
     var doneBody = section.querySelector(".sched-done-body");
     var todoBody = section.querySelector(".sched-todo-body");
-    section.querySelector(".sched-done-count").textContent = scheduled.length;
-    section.querySelector(".sched-todo-count").textContent = unscheduled.length;
+    section.querySelector(".sched-done-count").textContent = done.length;
+    section.querySelector(".sched-todo-count").textContent =
+      totalRemaining > 0 ? todo.length + " · 缺 " + totalRemaining + " 天" : todo.length;
 
-    doneBody.innerHTML = scheduled.length === 0
-      ? '<p class="sched-empty">本月還沒有安排任何客戶。</p>'
-      : '<ul class="sched-list">' + scheduled.map(function (n) {
-          var days = byClient[n].slice().sort(function (a, b) { return a - b; });
-          return '<li><span class="sched-name">' + escapeHtml(n) + '</span>' +
-            '<span class="sched-dates">' + days.length + ' 天 · ' + days.map(function (d) { return d + "日"; }).join("、") + '</span></li>';
+    doneBody.innerHTML = done.length === 0
+      ? '<p class="sched-empty">還沒有客戶排滿拍攝天數。</p>'
+      : '<ul class="sched-list">' + done.map(function (r) {
+          var over = r.booked.length > r.need && r.need > 0;
+          return '<li><span class="sched-name">' + escapeHtml(r.name) +
+            (over ? ' <span class="sched-tag is-over">超排 ' + (r.booked.length - r.need) + ' 天</span>' : '') +
+            '</span>' +
+            '<span class="sched-dates">' + r.booked.length + '/' + r.need + ' 天 · ' + formatDays(r.booked) + '</span></li>';
         }).join("") + '</ul>';
 
-    todoBody.innerHTML = unscheduled.length === 0
-      ? '<p class="sched-empty">所有客戶都已安排。</p>'
-      : '<ul class="sched-list">' + unscheduled.map(function (n) {
-          return '<li><span class="sched-name">' + escapeHtml(n) + '</span></li>';
+    todoBody.innerHTML = todo.length === 0
+      ? '<p class="sched-empty">所有客戶都已排滿。</p>'
+      : '<ul class="sched-list">' + todo.map(function (r) {
+          if (r.need === 0) {
+            return '<li><span class="sched-name">' + escapeHtml(r.name) + '</span>' +
+              '<span class="sched-dates is-muted">未設定拍攝天數</span></li>';
+          }
+          return '<li><span class="sched-name">' + escapeHtml(r.name) + '</span>' +
+            '<span class="sched-dates">已排 ' + r.booked.length + '/' + r.need +
+            ' · <span class="sched-short">還缺 ' + r.remaining + ' 天</span></span></li>';
         }).join("") + '</ul>';
   }
 
@@ -1451,7 +1521,7 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
         m.schedule.forEach(function (e) {
           if (!e || !e.date) return;
           var cell = section.querySelector('.cal-day[data-date="' + e.date + '"] .cal-entries');
-          if (cell) cell.insertAdjacentHTML("beforeend", entryHTML(e.clientName || ""));
+          if (cell) cell.insertAdjacentHTML("beforeend", entryHTML(e.clientName || "", e.time || ""));
         });
         updateCalendarDayStates(section);
       }
