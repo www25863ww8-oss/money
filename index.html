@@ -211,6 +211,7 @@
   .tab-content { display: none; }
   body[data-local-tab="clients"] .tab-content[data-tabname="clients"] { display: block; }
   body[data-local-tab="outsource"] .tab-content[data-tabname="outsource"] { display: block; }
+  body[data-local-tab="calendar"] .tab-content[data-tabname="calendar"] { display: block; }
   body[data-local-tab="dashboard"] .tab-content[data-tabname="dashboard"] { display: block; }
 
   #monthsRoot { display: block; }
@@ -369,6 +370,152 @@
   .status-toggle[data-status="unpaid"] .status-btn[data-value="unpaid"] { background: var(--danger); color: #fff; }
   .status-toggle[data-status="partial"] .status-btn[data-value="partial"] { background: var(--warn); color: #fff; }
   .status-toggle[data-status="paid"] .status-btn[data-value="paid"] { background: var(--success); color: #fff; }
+
+  /* ---------- calendar ---------- */
+
+  .cal-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 16px;
+    overflow-x: auto;
+  }
+  .cal-head, .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(96px, 1fr));
+    gap: 6px;
+    min-width: 700px;
+  }
+  .cal-head { margin-bottom: 6px; }
+  .cal-head div {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-dim);
+    letter-spacing: 0.04em;
+    padding: 4px 0;
+  }
+  .cal-head div.wk-sun, .cal-head div.wk-sat { color: var(--accent); }
+  .cal-day {
+    min-height: 92px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 6px;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .cal-day.is-empty { border-style: dashed; opacity: 0.4; }
+  .cal-day.is-weekend { background: var(--surface-2); }
+  .cal-day.has-entries { border-color: var(--accent); }
+  .cal-daynum {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-dim);
+  }
+  .cal-entries { display: flex; flex-direction: column; gap: 3px; }
+  .cal-entry {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-radius: 5px;
+    padding: 3px 5px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .cal-entry span {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .cal-entry-del {
+    border: none;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    padding: 0 2px;
+    opacity: 0.6;
+  }
+  .cal-entry-del:hover { opacity: 1; }
+  .cal-add-btn {
+    margin-top: auto;
+    border: 1px dashed var(--line);
+    background: transparent;
+    color: var(--ink-dim);
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 3px;
+  }
+  .cal-add-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .cal-add-select {
+    width: 100%;
+    padding: 3px;
+    border: 1px solid var(--accent);
+    border-radius: 5px;
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 12px;
+    font-family: "Noto Sans TC", sans-serif;
+  }
+  .cal-add-select[hidden], .cal-add-btn[hidden] { display: none; }
+
+  .sched-cols {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+  }
+  .sched-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 16px 18px;
+  }
+  .sched-card h3 {
+    margin: 0 0 12px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sched-count {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+  .sched-card.is-done .sched-count { background: var(--success-dim); color: var(--success); }
+  .sched-card.is-todo .sched-count { background: var(--warn-dim); color: var(--warn); }
+  .sched-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .sched-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    font-size: 13.5px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .sched-list li:last-child { border-bottom: none; padding-bottom: 0; }
+  .sched-name { font-weight: 600; }
+  .sched-dates {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    color: var(--ink-dim);
+    text-align: right;
+  }
+  .sched-empty { color: var(--ink-dim); font-size: 13px; }
 
   /* ---------- dashboard ---------- */
 
@@ -657,6 +804,7 @@
 <nav class="tabs" artifact-local>
   <button type="button" class="tab-btn" data-tab="clients">客戶總覽</button>
   <button type="button" class="tab-btn" data-tab="outsource">外包管理</button>
+  <button type="button" class="tab-btn" data-tab="calendar">拍攝行事曆</button>
   <button type="button" class="tab-btn" data-tab="dashboard">月度總覽</button>
   <button type="button" class="tab-btn" data-tab="data">資料管理</button>
 </nav>
@@ -790,6 +938,11 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
     d.textContent = s == null ? "" : String(s);
     return d.innerHTML;
   }
+  // escapeHtml alone leaves quotes intact, which breaks a double-quoted
+  // attribute if a client name contains one.
+  function escapeAttr(s) {
+    return escapeHtml(s).replace(/"/g, "&quot;");
+  }
 
   // ---------- row templates ----------
 
@@ -890,6 +1043,28 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
       '<table><thead><tr><th>外包名稱</th><th>總數量</th><th>總金額</th><th>已付金額</th><th>未付金額</th></tr></thead>' +
       '<tbody class="outsource-summary" artifact-local></tbody>' +
       '</table></div></div>' +
+    '</div>' +
+
+    '<div class="tab-content" data-tabname="calendar">' +
+      '<h2 class="section-title" style="margin-top:0;">拍攝行事曆</h2>' +
+      '<div class="cal-card">' +
+        '<div class="cal-head">' +
+          '<div class="wk-sun">日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div class="wk-sat">六</div>' +
+        '</div>' +
+        '<div class="cal-grid"></div>' +
+      '</div>' +
+
+      '<h2 class="section-title">安排狀況</h2>' +
+      '<div class="sched-cols">' +
+        '<div class="sched-card is-done" artifact-local>' +
+          '<h3>已安排 <span class="sched-count sched-done-count">0</span></h3>' +
+          '<div class="sched-done-body"></div>' +
+        '</div>' +
+        '<div class="sched-card is-todo" artifact-local>' +
+          '<h3>尚未安排 <span class="sched-count sched-todo-count">0</span></h3>' +
+          '<div class="sched-todo-body"></div>' +
+        '</div>' +
+      '</div>' +
     '</div>' +
 
     '<div class="tab-content" data-tabname="dashboard">' +
@@ -994,6 +1169,127 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
     });
   }
 
+  // ---------- 拍攝行事曆 ----------
+  // Schedule entries live in the calendar cells themselves, so the DOM stays
+  // the single source of truth (same as every other tab). The grid is only
+  // rebuilt when the month changes, so entries survive ordinary re-renders.
+
+  function readSchedule(section) {
+    if (!section) return [];
+    var out = [];
+    section.querySelectorAll(".cal-day[data-date]").forEach(function (day) {
+      day.querySelectorAll(".cal-entry").forEach(function (entry) {
+        out.push({ date: day.dataset.date, clientName: entry.dataset.client || "" });
+      });
+    });
+    return out;
+  }
+
+  function daysInMonth(key) {
+    var parts = key.split("-").map(Number);
+    return new Date(parts[0], parts[1], 0).getDate();
+  }
+  function firstWeekdayOfMonth(key) {
+    var parts = key.split("-").map(Number);
+    return new Date(parts[0], parts[1] - 1, 1).getDay(); // 0 = Sunday
+  }
+  function entryHTML(clientName) {
+    return '<div class="cal-entry" data-client="' + escapeAttr(clientName) + '">' +
+      '<span>' + escapeHtml(clientName) + '</span>' +
+      '<button type="button" class="cal-entry-del" title="移除">×</button></div>';
+  }
+
+  function ensureCalendarGrid(section, key) {
+    var grid = section.querySelector(".cal-grid");
+    if (!grid) return;
+    if (grid.dataset.builtFor === key) return; // already built for this month
+
+    var existing = readSchedule(section);
+    var lead = firstWeekdayOfMonth(key);
+    var total = daysInMonth(key);
+    var html = "";
+    for (var i = 0; i < lead; i++) html += '<div class="cal-day is-empty"></div>';
+    for (var d = 1; d <= total; d++) {
+      var dateStr = key + "-" + String(d).padStart(2, "0");
+      var weekday = (lead + d - 1) % 7;
+      var weekendClass = (weekday === 0 || weekday === 6) ? " is-weekend" : "";
+      html += '<div class="cal-day' + weekendClass + '" data-date="' + dateStr + '">' +
+        '<div class="cal-daynum">' + d + '</div>' +
+        '<div class="cal-entries"></div>' +
+        '<button type="button" class="cal-add-btn">＋</button>' +
+        '<select class="cal-add-select" hidden></select>' +
+        '</div>';
+    }
+    grid.innerHTML = html;
+    grid.dataset.builtFor = key;
+
+    // restore entries that belong to this month
+    existing.forEach(function (e) {
+      if (e.date.indexOf(key) !== 0) return;
+      var cell = grid.querySelector('.cal-day[data-date="' + e.date + '"] .cal-entries');
+      if (cell) cell.insertAdjacentHTML("beforeend", entryHTML(e.clientName));
+    });
+    updateCalendarDayStates(section);
+  }
+
+  function updateCalendarDayStates(section) {
+    section.querySelectorAll(".cal-day[data-date]").forEach(function (day) {
+      day.classList.toggle("has-entries", day.querySelectorAll(".cal-entry").length > 0);
+    });
+  }
+
+  function refreshCalendarSelects(section) {
+    var names = getClientNames(section);
+    var options = '<option value="">選擇客戶…</option>' + names.map(function (n) {
+      return '<option value="' + escapeAttr(n) + '">' + escapeHtml(n) + '</option>';
+    }).join("");
+    section.querySelectorAll(".cal-add-select").forEach(function (sel) {
+      sel.innerHTML = options;
+      sel.value = "";
+    });
+  }
+
+  function renderScheduleSummary(section) {
+    var names = getClientNames(section);
+    var schedule = readSchedule(section);
+    var byClient = {};
+    schedule.forEach(function (e) {
+      if (!e.clientName) return;
+      if (!byClient[e.clientName]) byClient[e.clientName] = [];
+      byClient[e.clientName].push(Number(e.date.slice(8)));
+    });
+
+    var scheduled = [];
+    var unscheduled = [];
+    names.forEach(function (n) {
+      if (byClient[n]) scheduled.push(n);
+      else unscheduled.push(n);
+    });
+    // clients scheduled but no longer in the client list (renamed/removed)
+    Object.keys(byClient).forEach(function (n) {
+      if (names.indexOf(n) === -1) scheduled.push(n);
+    });
+
+    var doneBody = section.querySelector(".sched-done-body");
+    var todoBody = section.querySelector(".sched-todo-body");
+    section.querySelector(".sched-done-count").textContent = scheduled.length;
+    section.querySelector(".sched-todo-count").textContent = unscheduled.length;
+
+    doneBody.innerHTML = scheduled.length === 0
+      ? '<p class="sched-empty">本月還沒有安排任何客戶。</p>'
+      : '<ul class="sched-list">' + scheduled.map(function (n) {
+          var days = byClient[n].slice().sort(function (a, b) { return a - b; });
+          return '<li><span class="sched-name">' + escapeHtml(n) + '</span>' +
+            '<span class="sched-dates">' + days.length + ' 天 · ' + days.map(function (d) { return d + "日"; }).join("、") + '</span></li>';
+        }).join("") + '</ul>';
+
+    todoBody.innerHTML = unscheduled.length === 0
+      ? '<p class="sched-empty">所有客戶都已安排。</p>'
+      : '<ul class="sched-list">' + unscheduled.map(function (n) {
+          return '<li><span class="sched-name">' + escapeHtml(n) + '</span></li>';
+        }).join("") + '</ul>';
+  }
+
   function computeStats(key) {
     var section = getMonthSection(key);
     var clients = readClients(section);
@@ -1074,10 +1370,10 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
     var names = getClientNames(section);
     var html = '<option value="">請選擇客戶</option>';
     names.forEach(function (n) {
-      html += '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>';
+      html += '<option value="' + escapeAttr(n) + '">' + escapeHtml(n) + '</option>';
     });
     if (currentValue && names.indexOf(currentValue) === -1) {
-      html += '<option value="' + escapeHtml(currentValue) + '">' + escapeHtml(currentValue) + '（非本月客戶）</option>';
+      html += '<option value="' + escapeAttr(currentValue) + '">' + escapeHtml(currentValue) + '（非本月客戶）</option>';
     }
     select.innerHTML = html;
     select.value = currentValue || "";
@@ -1150,6 +1446,15 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
         tr.querySelector(".f-amount").value = e.amount || "";
         tr.querySelector(".f-note").value = e.note || "";
       });
+      if (m.schedule && m.schedule.length) {
+        ensureCalendarGrid(section, key);
+        m.schedule.forEach(function (e) {
+          if (!e || !e.date) return;
+          var cell = section.querySelector('.cal-day[data-date="' + e.date + '"] .cal-entries');
+          if (cell) cell.insertAdjacentHTML("beforeend", entryHTML(e.clientName || ""));
+        });
+        updateCalendarDayStates(section);
+      }
     });
   }
 
@@ -1320,6 +1625,9 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
     var section = getMonthSection(key);
     if (!section) return;
     refreshClientRefSelects(section);
+    ensureCalendarGrid(section, key);
+    refreshCalendarSelects(section);
+    renderScheduleSummary(section);
     renderClientsFoot(section);
     renderContractorTotals(section);
     renderOutsourceSummary(section);
@@ -1481,6 +1789,22 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
         }
       }
       changed = true;
+    } else if (e.target.classList.contains("cal-add-btn")) {
+      // reveal the picker for this day only; closing any other open one first
+      section.querySelectorAll(".cal-add-select").forEach(function (sel) {
+        sel.hidden = true;
+        sel.parentElement.querySelector(".cal-add-btn").hidden = false;
+      });
+      var day = e.target.closest(".cal-day");
+      e.target.hidden = true;
+      var select = day.querySelector(".cal-add-select");
+      select.hidden = false;
+      select.focus();
+      return;
+    } else if (e.target.classList.contains("cal-entry-del")) {
+      e.target.closest(".cal-entry").remove();
+      updateCalendarDayStates(section);
+      changed = true;
     }
 
     if (changed) {
@@ -1493,8 +1817,28 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
   monthsRoot.addEventListener("input", function (e) {
     var section = e.target.closest(".month-section");
     if (!section) return;
+    if (e.target.classList.contains("cal-add-select")) return; // handled on change
     recomputeSection(section.dataset.month);
     onDataChanged();
+  });
+
+  monthsRoot.addEventListener("change", function (e) {
+    if (!e.target.classList.contains("cal-add-select")) return;
+    var section = e.target.closest(".month-section");
+    if (!section) return;
+    var day = e.target.closest(".cal-day");
+    var name = e.target.value;
+    if (name) {
+      day.querySelector(".cal-entries").insertAdjacentHTML("beforeend", entryHTML(name));
+    }
+    e.target.value = "";
+    e.target.hidden = true;
+    day.querySelector(".cal-add-btn").hidden = false;
+    updateCalendarDayStates(section);
+    if (name) {
+      renderScheduleSummary(section);
+      onDataChanged();
+    }
   });
 
   // ---------- persistence ----------
@@ -1633,7 +1977,8 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
       months[key] = {
         clients: readClients(section),
         outsourcers: readOutsourcers(section),
-        otherExpenses: readExpenses(section)
+        otherExpenses: readExpenses(section),
+        schedule: readSchedule(section)
       };
     });
     return { months: months, exportedAt: new Date().toISOString() };
