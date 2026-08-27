@@ -447,9 +447,12 @@
     background: var(--surface);
     color: var(--ink);
     font-family: "IBM Plex Mono", monospace;
+    font-variant-numeric: tabular-nums;
     font-size: 11px;
+    font-weight: 600;
     padding: 2px 3px;
     box-sizing: border-box;
+    cursor: pointer;
   }
   .cal-entry-time:hover { border-color: var(--accent); }
   .cal-entry-time:focus { border-color: var(--accent); outline: none; }
@@ -1236,8 +1239,27 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
         '<span class="cal-entry-name">' + escapeHtml(clientName) + '</span>' +
         '<button type="button" class="cal-entry-del" title="移除">×</button>' +
       '</div>' +
-      '<input type="time" class="cal-entry-time" value="' + escapeAttr(time || "") + '" title="拍攝時間">' +
+      '<select class="cal-entry-time" title="拍攝時間">' + timeOptionsHTML(time || "") + '</select>' +
       '</div>';
+  }
+
+  // 原生 <input type="time"> 的顯示格式跟著瀏覽器語系走（zh-TW 會變成「上午/下午」），
+  // lang 屬性在 Chrome 無效，所以改用自建的 24 小時制下拉選單，每 15 分鐘一個選項。
+  function timeOptionsHTML(current) {
+    var html = '<option value="">未定</option>';
+    var matched = false;
+    for (var h = 0; h < 24; h++) {
+      for (var m = 0; m < 60; m += 15) {
+        var v = String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
+        if (v === current) matched = true;
+        html += '<option value="' + v + '"' + (v === current ? " selected" : "") + ">" + v + "</option>";
+      }
+    }
+    // 保留不在 15 分鐘刻度上的舊資料，避免改版後時間被吃掉
+    if (current && !matched) {
+      html += '<option value="' + escapeAttr(current) + '" selected>' + escapeHtml(current) + "</option>";
+    }
+    return html;
   }
 
   function ensureCalendarGrid(section, key) {
