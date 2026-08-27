@@ -372,6 +372,30 @@
 
   /* ---------- dashboard ---------- */
 
+  .overview-table { min-width: 0; }
+  .overview-table td {
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .overview-table tr:last-child td { border-bottom: none; }
+  .overview-table .ov-label {
+    color: var(--ink-dim);
+    font-size: 13.5px;
+  }
+  .overview-table .ov-value {
+    font-family: "IBM Plex Mono", monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    font-size: 14.5px;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .overview-table tr.tone-success .ov-value { color: var(--success); }
+  .overview-table tr.tone-danger .ov-value { color: var(--danger); }
+  .overview-table tr.tone-warn .ov-value { color: var(--warn); }
+  .overview-table tr.emphasize td { font-weight: 700; font-size: 16px; }
+  .overview-table tr.emphasize .ov-label { color: var(--ink); }
+
   .stat-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
@@ -869,7 +893,10 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
     '</div>' +
 
     '<div class="tab-content" data-tabname="dashboard">' +
-      '<div class="stat-grid" artifact-local></div>' +
+      '<h2 class="section-title">月度總覽</h2>' +
+      '<div class="table-card"><div class="table-wrap">' +
+      '<table class="overview-table"><tbody class="overview-body" artifact-local></tbody></table>' +
+      '</div></div>' +
 
       '<h2 class="section-title">本月產量</h2>' +
       '<div class="stat-grid production-grid" artifact-local></div>' +
@@ -1210,21 +1237,24 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
 
   function renderStatGrid(section, key) {
     var stats = computeStats(key);
-    var cards = [
-      { label: "客戶總營收", value: stats.revenue, tone: "accent" },
+    var rows = [
+      { label: "客戶總營收", value: stats.revenue, tone: "", emphasize: true },
       { label: "稅金", value: stats.tax, tone: "" },
       { label: "外包總支出", value: stats.outsourceCost, tone: "danger" },
       { label: "其他支出", value: stats.otherExpense, tone: "danger" },
       { label: "總支出", value: stats.totalExpense, tone: "danger" },
-      { label: "淨利", value: stats.netProfit, tone: stats.netProfit >= 0 ? "success" : "danger" },
+      { label: "淨利", value: stats.netProfit, tone: stats.netProfit >= 0 ? "success" : "danger", emphasize: true },
       { label: "應收未收", value: stats.unreceived, tone: stats.unreceived > 0 ? "warn" : "" },
       { label: "應付未付", value: stats.unpaid, tone: stats.unpaid > 0 ? "warn" : "" }
     ];
-    var grid = section.querySelector(".stat-grid:not(.production-grid)");
-    grid.innerHTML = cards.map(function (c) {
-      return '<div class="stat-card' + (c.tone ? " tone-" + c.tone : "") + '">' +
-        '<div class="label">' + c.label + '</div>' +
-        '<div class="value">' + fmtMoney(c.value) + '</div></div>';
+    var body = section.querySelector(".overview-body");
+    body.innerHTML = rows.map(function (r) {
+      var classes = [];
+      if (r.tone) classes.push("tone-" + r.tone);
+      if (r.emphasize) classes.push("emphasize");
+      return '<tr' + (classes.length ? ' class="' + classes.join(" ") + '"' : '') + '>' +
+        '<td class="ov-label">' + r.label + '</td>' +
+        '<td class="ov-value">' + fmtMoney(r.value) + '</td></tr>';
     }).join("");
 
     renderProductionGrid(section, stats);
