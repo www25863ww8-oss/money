@@ -980,7 +980,8 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
     var outsourcePaid = outsourcers.reduce(function (s, o) { return s + o.paidAmount; }, 0);
     var unpaid = Math.max(0, outsourceCost - outsourcePaid);
     var otherExpense = expenses.reduce(function (s, e) { return s + e.amount; }, 0);
-    var netProfit = revenue - tax - outsourceCost - otherExpense;
+    var totalExpense = tax + outsourceCost + otherExpense;
+    var netProfit = revenue - totalExpense;
 
     var shootDays = clients.reduce(function (s, c) { return s + c.shootDays; }, 0);
     var scriptCount = clients.reduce(function (s, c) { return s + c.scriptCount; }, 0);
@@ -1000,7 +1001,7 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
     return {
       revenue: revenue, tax: tax, received: received, unreceived: unreceived,
       outsourceCost: outsourceCost, outsourcePaid: outsourcePaid, unpaid: unpaid,
-      otherExpense: otherExpense, netProfit: netProfit,
+      otherExpense: otherExpense, totalExpense: totalExpense, netProfit: netProfit,
       clientCount: clients.length, outsourceCount: outsourcers.length,
       shootDays: shootDays, scriptCount: scriptCount, editCount: editCount, videoCount: videoCount,
       outsourcedScriptQty: outsourcedScriptQty, outsourcedEditQty: outsourcedEditQty,
@@ -1214,6 +1215,7 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
       { label: "稅金", value: stats.tax, tone: "" },
       { label: "外包總支出", value: stats.outsourceCost, tone: "danger" },
       { label: "其他支出", value: stats.otherExpense, tone: "danger" },
+      { label: "總支出", value: stats.totalExpense, tone: "danger" },
       { label: "淨利", value: stats.netProfit, tone: stats.netProfit >= 0 ? "success" : "danger" },
       { label: "應收未收", value: stats.unreceived, tone: stats.unreceived > 0 ? "warn" : "" },
       { label: "應付未付", value: stats.unpaid, tone: stats.unpaid > 0 ? "warn" : "" }
@@ -1625,6 +1627,7 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
     lines.push("稅金," + stats.tax);
     lines.push("外包總支出," + stats.outsourceCost);
     lines.push("其他支出," + stats.otherExpense);
+    lines.push("總支出," + stats.totalExpense);
     lines.push("淨利," + stats.netProfit);
     lines.push("應收未收," + stats.unreceived);
     lines.push("應付未付," + stats.unpaid);
