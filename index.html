@@ -1495,12 +1495,10 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
     tr.querySelector(".f-note").value = c.note || "";
     // payment status & received amount intentionally reset for the new month
   }
+  // 複製上個月時只帶外包人員名單，細項（負責客戶/內容/單價/數量）不帶，
+  // 因為每個月分配都不一樣；付款狀態與實付金額同樣重置。
   function fillContractorCard(card, o) {
     card.querySelector(".f-cname").value = o.name || "";
-    o.items.forEach(function (it) {
-      fillItemRow(addItemRow(card), it);
-    });
-    // payment status & paid amount intentionally reset for the new month
   }
   function fillItemRow(tr, it) {
     var section = tr.closest(".month-section");
